@@ -1,0 +1,9 @@
+sobox_clnt.c
+sobox_svc.c
+sobox_xdr.c
+sobox.h
+/server
+/client
+*.so
+/test/test
+.knit

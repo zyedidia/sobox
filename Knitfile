@@ -1,0 +1,26 @@
+return b{
+    $ all:VB: test/test libfoo/libfoo.so libsobox.so
+
+    $ test/test: test/test.c libsobox.so
+        cc -O2 -g $input -o $output -lsobox -L.
+
+    $ libsobox.so: sobox.c sobox_clnt.c sobox_xdr.c sobox_server.c sobox_svc.c
+        cc -O2 -g -shared -fPIC $input -o $output -I/usr/include/tirpc -ltirpc
+
+    $ sobox.h: sobox.x
+        rpcgen -h $input > $output
+    $ sobox_svc.c: sobox.x
+        rpcgen -m $input > $output
+    $ sobox_clnt.c: sobox.x
+        rpcgen -l $input > $output
+    $ sobox_xdr.c: sobox.x
+        rpcgen -c $input > $output
+
+    $ server: sobox_svc.c sobox_server.c sobox_xdr.c
+        cc -O2 -g -I/usr/include/tirpc $input -o $output -ltirpc
+    $ client: sobox_clnt.c sobox_client.c sobox_xdr.c
+        cc -O2 -g -I/usr/include/tirpc $input -o $output -ltirpc
+
+    $ libfoo/libfoo.so: libfoo/foo.c
+        cc -O2 $input -shared -fPIC -o $output
+}
