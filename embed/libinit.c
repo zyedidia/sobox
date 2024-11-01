@@ -66,8 +66,8 @@ sbx_init(void)
         exit(1);
     }
 
-    char** args = {NULL};
-    LFIXProc* p = lfix_proc_newfile(&engine, stub->start, stub->end - stub->start, 0, args);
+    char* args[] = {"stub", NULL};
+    LFIXProc* p = lfix_proc_newfile(&engine, stub->start, stub->end - stub->start, 1, &args[0]);
     if (!p) {
         fprintf(stderr, "error creating LFI process: %s\n", lfi_strerror());
         exit(1);

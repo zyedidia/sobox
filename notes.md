@@ -1,3 +1,5 @@
+# How the generated library works
+
 Here's an example trace for how a sandboxed library works in practice:
 
 * The tool produces `libfoo.box.so` from `libfoo.so` (a shared library compiled with the LFI toolchain). In the future the tool will also need a listing of function signatures to handle stack arguments, but for now only arguments passed in registers are supported.
@@ -19,3 +21,17 @@ That is the initialization phase. Now the invocation phase (performance-critical
 * The function inside the sandbox executes, and then executes `ret`, which takes it to its return function, which invokes the "return" runtime call.
 * The return runtime call restores the host stack (saved in the active LFI process struct), and restores callee-saved registers.
 * When the return runtime call attempts to return, the return address points back to the original caller of `bar`, so at this point the function has completed execution and control transfers back to the caller.
+
+# How the tool works
+
+When you invoke the `sobox` tool, you pass it a shared library that you want to wrap (`libfoo.so`). The tool will generate four files from some templates stored in `embed/` and put them into a `gen` directory.
+
+* `stub.s`: an LFI program that is meant to run inside the sandbox and is linked with `libfoo.so`. This program records all exported functions in `libfoo.so` into a table, and then makes a runtime call to exit. It also includes the code for the "retfn", a function that invokes the return runtime call.
+* `includes.c`, `trampolines.s`, `libinit.c`: these comprise the code for the generated library.
+    * `includes.c`: used to embed files into the generated library, such as the dynamic linker, `libfoo.so` itself, and the stub.
+    * `libinit.c`: contains the library constructor that initializes the LFI engine, runs the stub, and copies the sandbox's trampoline table into the host trampoline table (`__lfi_trampotable`, defined in `trampolines.s`).
+    * `trampolines.s`: includes the host trampoline table (`__lfi_trampotable`), as well as trampolines for each exported function. Each function's trampoline loads the sandbox address for the wrapped function from the trampoline table into `%r12` and then jumps to the generic `__lfi_trampoline` routine that switches to the sandbox environment and jumps to `%r12`.
+
+After generating `stub.s`, Sobox invokes the LFI GCC compiler to build it to an ELF program. The compiler is invoked with `libfoo.so` so that the stub gets dynamically linked with the wrapped library.
+
+Next, `includes.c`, `libinit.c` and `trampolines.s` are compiled into `libfoo.box.so`, along with `liblfix` which is also linked in statically. `liblfix` is the library for creating LFI sandboxes and includes handlers for a Linux-compatible system call subset.
