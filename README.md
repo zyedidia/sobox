@@ -56,10 +56,10 @@ Limited benchmarking has been done on an AMD Ryzen 9 7950X CPU. Below are
 measurements for calling an `int add(int, int)` function with and without
 sandboxing.
 
-| Platform | Cycles | Instructions |
-| --- | --- | --- |
-| Native | 9 | 9 |
-| Sobox-LFI | 19 | 43 |
+| Platform | Cycles | Instructions | Time |
+| --- | --- | --- | --- |
+| Native | 9 | 9 | 1.6ns |
+| Sobox-LFI | 19 | 43 | 3.5ns |
 
 # `dlopen`
 
