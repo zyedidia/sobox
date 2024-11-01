@@ -120,6 +120,8 @@ func getenv(varname string, defval string) string {
 func main() {
 	objmap := make(map[string]string)
 
+	outflag := flag.String("o", "", "output file")
+
 	flag.Func("map", "map object to file", func(s string) error {
 		parts := strings.SplitN(s, "=", 2)
 		if len(parts) != 2 {
@@ -216,5 +218,10 @@ func main() {
 
 	cc := getenv("CC", "gcc")
 
-	run(cc, fincludes.Name(), ftrampolines.Name(), flibinit.Name(), "-llfix", "-shared", "-O2", "-fPIC", "-o", getname(solib)+".box.so")
+	out := *outflag
+	if out == "" {
+		out = getname(solib) + ".box.so"
+	}
+
+	run(cc, fincludes.Name(), ftrampolines.Name(), flibinit.Name(), "-llfix", "-shared", "-O2", "-fPIC", "-o", out)
 }
