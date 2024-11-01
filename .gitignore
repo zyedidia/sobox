@@ -1,0 +1,6 @@
+msg.md
+cmds.txt
+*.out
+*.so
+*.o
+soboxer/gen
