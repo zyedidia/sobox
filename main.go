@@ -109,6 +109,11 @@ func getname(solib string) string {
 	return before
 }
 
+func libname(solib string) string {
+	_, after, _ := strings.Cut(getname(filepath.Base(solib)), "lib")
+	return after
+}
+
 func getenv(varname string, defval string) string {
 	v := os.Getenv(varname)
 	if v != "" {
@@ -199,7 +204,7 @@ func main() {
 	fstub.Close()
 	ftrampolines.Close()
 
-	run(lficc, fstub.Name(), "-o", stubgen, solib)
+	run(lficc, fstub.Name(), "-o", stubgen, "-L"+filepath.Dir(solib), "-l"+libname(solib))
 	objmap["stub"] = stubgen
 
 	objs, err := ef.DynString(elf.DT_NEEDED)
