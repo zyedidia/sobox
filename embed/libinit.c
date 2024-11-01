@@ -26,7 +26,7 @@ extern void* __lfi_trampotable[];
 extern size_t __lfi_trampotable_size;
 
 static struct File*
-findfile(char* filename)
+findfile(const char* filename)
 {
     for (size_t i = 0; i < sbx_nfiles; i++) {
         if (strncmp(filename, sbx_filenames[i], PATH_MAX) == 0)
@@ -49,6 +49,19 @@ gb(size_t x)
     return x * 1024 * 1024 * 1024;
 }
 
+static bool
+readfile(const char* filename, uint8_t** data, size_t* size)
+{
+    struct File* f = findfile(filename);
+    if (!f)
+        return false;
+
+    *data = f->start;
+    *size = f->end - f->start;
+
+    return true;
+}
+
 __attribute__((constructor)) void
 sbx_init(void)
 {
@@ -59,6 +72,7 @@ sbx_init(void)
         exit(1);
     }
     engine.pause = true;
+    engine.readfile = readfile;
 
     struct File* stub = findfile("stub");
     if (!stub) {

@@ -47,7 +47,7 @@ func run(command string, args ...string) {
 }
 
 func ident(s string) string {
-	return strings.ReplaceAll(s, ".", "__")
+	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s, ".", "__"), "-", "__"), "/", "__")
 }
 
 func execTemplate(w io.Writer, name string, data string, vars map[string]any, funcs template.FuncMap) {
@@ -205,6 +205,7 @@ func main() {
 	ftrampolines.Close()
 
 	run(lficc, fstub.Name(), "-o", stubgen, "-L"+filepath.Dir(solib), "-l"+libname(solib))
+	run("patchelf", "--set-interpreter", "ld-musl-x86_64.so.1", stubgen)
 	objmap["stub"] = stubgen
 
 	objs, err := ef.DynString(elf.DT_NEEDED)
