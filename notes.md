@@ -18,7 +18,7 @@ That is the initialization phase. Now the invocation phase (performance-critical
 * The executable code attempts to call a function called `bar`.
 * This goes to the `bar` function in `libfoo.box.so`, which is a trampoline that first reads the address of the internal `bar` from the trampoline table, and then sets up the sandbox registers/stack using the currently active LFI process, a variable stored in thread-local memory. The return address pushed on the stack is the address of the sandbox's return function.
 * The trampoline then jumps to the internal `bar` function.
-* The function inside the sandbox executes, and then executes `ret`, which takes it to its return function, which invokes the "return" runtime call.
+* The function inside the sandbox executes, and then returns (implemented as a bundle-aligned indirect jump), which takes it to its return function (also inside the sandbox), which invokes the "return" runtime call.
 * The return runtime call restores the host stack (saved in the active LFI process struct), and restores callee-saved registers.
 * When the return runtime call attempts to return, the return address points back to the original caller of `bar`, so at this point the function has completed execution and control transfers back to the caller.
 
