@@ -1,4 +1,4 @@
-module soboxer
+module github.com/zyedidia/sobox
 
 go 1.22.0
 

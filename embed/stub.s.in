@@ -1,0 +1,23 @@
+.section ".text.stub"
+.p2align 5
+.global main
+main:
+	// load address of trampoline table and then exit
+	leaq trampotable(%rip), %rdi
+	mov $60, %rax
+	syscall
+	int3
+.p2align 5
+.global retfn
+retfn:
+	// special pseudo-instruction for calling the return runtime call
+	libret
+	int3
+.section ".data.trampotable"
+.global trampotable
+trampotable:
+	.quad retfn
+{{- range $sym := .syms }}
+	.quad {{ $sym }}
+{{- end }}
+.section .note.GNU-stack,"",@progbits

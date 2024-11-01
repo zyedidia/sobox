@@ -11,10 +11,9 @@ int main(int argc, char** argv) {
     }
     void* handle = dlopen(argv[1], RTLD_LAZY);
     if (!handle) {
-        printf("%s\n", argv[1]);
-        printf("error: %s\n", dlerror());
+        printf("dlerror: %s\n", dlerror());
+        return 1;
     }
-    assert(handle);
 
     void* sym = dlsym(handle, "add");
     assert(sym);

@@ -22,8 +22,8 @@ extern char* sbx_filenames[];
 extern struct File sbx_filedata[];
 extern size_t sbx_nfiles;
 
-extern void* __lfi_tplntbl[];
-extern size_t __lfi_tplntbl_size;
+extern void* __lfi_trampotable[];
+extern size_t __lfi_trampotable_size;
 
 static struct File*
 findfile(char* filename)
@@ -36,10 +36,10 @@ findfile(char* filename)
 }
 
 static void
-install_tplntbl(void** table)
+install_trampotable(void** table)
 {
-    for (size_t i = 0; i < __lfi_tplntbl_size; i++) {
-        __lfi_tplntbl[i] = table[i];
+    for (size_t i = 0; i < __lfi_trampotable_size; i++) {
+        __lfi_trampotable[i] = table[i];
     }
 }
 
@@ -77,5 +77,5 @@ sbx_init(void)
 
     // TODO: validate the trampoline table before installing it, since
     // intalling it involves reading from sandbox memory.
-    install_tplntbl((void**) r);
+    install_trampotable((void**) r);
 }
