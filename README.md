@@ -29,10 +29,12 @@ such as `libc.so`, `libstdc++.so` and the dynamic linker. These libraries are
 provided by the LFI GCC toolchain.
 
 ```
-sobox -map libc.so=/path/to/lfi/libc.so \
-    -map ld-musl-x86_64.so.1=/path/to/lfi/ld-musl-x86_64.so.1 \
+sobox -map ld-musl-x86_64.so.1=/path/to/lfi/ld-musl-x86_64.so.1 \
+    -map /lib/libfoo.lfi.so=libfoo.lfi.so \
     -o libfoo.box.so libfoo.lfi.so
 ```
+
+(`ld-musl-x86_64.so.1` includes Musl's `libc.so` inside of it)
 
 This will produce a self-contained shared object file that can be linked with
 your application.
