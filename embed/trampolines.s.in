@@ -1,6 +1,6 @@
 .section ".text.trampolines"
 
-.global __lfi_trampoline
+.global __lfi_trampoline, __sbx_entry
 __lfi_trampoline:
 	pushq %r15
 	pushq %r14
@@ -13,11 +13,13 @@ __lfi_trampoline:
 	movq %rsp, 0(%r11) # kstackp
 	movq 16(%r11), %rsp # stack pointer
 	movq 16+14*8(%r11), %r14 # base pointer
-	mov __lfi_retfn@GOTPCREL(%rip), %r11
+	mov __lfisym_retfn@GOTPCREL(%rip), %r11
 	mov (%r11), %r11
+	subq $8, %rsp
 	pushq %r11
 	xor %r11d, %r11d
 	# TODO: make sure r11 is bundle-aligned and within the sandbox
+__sbx_entry:
 	jmpq *%r12
 	int3
 
@@ -29,22 +31,31 @@ __lfi_trampoline:
 	jmp __lfi_trampoline
 {{- end}}
 
+{{- range $sym := .sbxsyms}}
+.global sbx_{{$sym}}
+sbx_{{$sym}}:
+	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r12
+	movq (%r12), %r12
+	jmp __lfi_trampoline
+{{- end}}
+
 .section ".data.trampolines"
 
 .global __lfi_trampotable
 __lfi_trampotable:
-.global __lfi_retfn
-__lfi_retfn:
-	.quad 0
 
 {{- range $sym := .syms}}
-.global __lfisym_{{$sym}}
+__lfisym_{{$sym}}:
+	.quad 0
+{{- end}}
+
+{{- range $sym := .sbxsyms}}
 __lfisym_{{$sym}}:
 	.quad 0
 {{- end}}
 
 .global __lfi_trampotable_size
 __lfi_trampotable_size:
-	.quad {{.nsyms}}+1
+	.quad {{.nsyms}}+{{.nsbxsyms}}
 
 .section .note.GNU-stack,"",@progbits

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -43,12 +44,6 @@ install_trampotable(void** table)
     }
 }
 
-static size_t
-gb(size_t x)
-{
-    return x * 1024 * 1024 * 1024;
-}
-
 static bool
 readfile(const char* filename, uint8_t** data, size_t* size)
 {
@@ -89,7 +84,24 @@ sbx_init(void)
 
     uint64_t r = lfi_proc_start(p->l_proc);
 
-    // TODO: validate the trampoline table before installing it, since
-    // intalling it involves reading from sandbox memory.
+    // TODO: validate the trampoline table (its location) before installing it,
+    // since intalling it involves reading from sandbox memory. Possibly also
+    // validate its contents (not entirely necessary if the trampoline uses
+    // uses a safe bundle-aligned jump for entry, but probably still a good
+    // idea).
     install_trampotable((void**) r);
+}
+
+void*
+sbx_stackpush(size_t n)
+{
+    (void) n;
+    assert(!"unimplemented");
+}
+
+size_t
+sbx_stackpop(size_t n)
+{
+    (void) n;
+    assert(!"unimplemented");
 }

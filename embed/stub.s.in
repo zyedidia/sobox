@@ -16,8 +16,10 @@ retfn:
 .section ".data.trampotable"
 .global trampotable
 trampotable:
-	.quad retfn
 {{- range $sym := .syms }}
-	.quad {{ $sym }}
+	.quad {{$sym}}
 {{- end }}
+{{- range $sym := .sbxsyms}}
+	.quad {{$sym}}
+{{- end}}
 .section .note.GNU-stack,"",@progbits

@@ -29,6 +29,13 @@ var trampolines string
 //go:embed embed/includes.c.in
 var includes string
 
+// Symbols inside the sandbox needed by libsobox
+var sbxsyms = []string{
+	"retfn",
+	"malloc",
+	"free",
+}
+
 func fatal(err ...interface{}) {
 	fmt.Fprintln(os.Stderr, err...)
 	os.Exit(1)
@@ -89,8 +96,10 @@ func genTrampolines(syms []elf.Symbol, w io.Writer) {
 	}
 
 	execTemplate(w, "trampolines", trampolines, map[string]any{
-		"syms":  symnames,
-		"nsyms": len(symnames),
+		"syms":     symnames,
+		"nsyms":    len(symnames),
+		"sbxsyms":  sbxsyms,
+		"nsbxsyms": len(sbxsyms),
 	}, nil)
 }
 
@@ -100,7 +109,8 @@ func genStub(syms []elf.Symbol, w io.Writer) {
 		symnames = append(symnames, sym.Name)
 	}
 	execTemplate(w, "stub", stub, map[string]any{
-		"syms": symnames,
+		"syms":    symnames,
+		"sbxsyms": sbxsyms,
 	}, nil)
 }
 
