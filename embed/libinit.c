@@ -57,10 +57,11 @@ readfile(const char* filename, uint8_t** data, size_t* size)
     return true;
 }
 
+static LFIXEngine engine;
+
 __attribute__((constructor)) void
 sbx_init(void)
 {
-    LFIXEngine engine;
     bool b = lfix_init(&engine);
     if (!b) {
         fprintf(stderr, "error loading LFI: %s\n", lfi_strerror());

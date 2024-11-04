@@ -15,27 +15,27 @@ __lfi_trampoline:
 	movq 16+14*8(%r11), %r14 # base pointer
 	mov __lfisym_retfn@GOTPCREL(%rip), %r11
 	mov (%r11), %r11
-	subq $8, %rsp
+	andq $0xfffffffffffffff0, %rsp
 	pushq %r11
 	xor %r11d, %r11d
-	# TODO: make sure r11 is bundle-aligned and within the sandbox
+	# TODO: make sure r10 is bundle-aligned and within the sandbox
 __sbx_entry:
-	jmpq *%r12
+	jmpq *%r10
 	int3
 
 {{- range $sym := .syms }}
 .global {{$sym}}
 {{$sym}}:
-	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r12
-	movq (%r12), %r12
+	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
+	movq (%r10), %r10
 	jmp __lfi_trampoline
 {{- end}}
 
 {{- range $sym := .sbxsyms}}
 .global sbx_{{$sym}}
 sbx_{{$sym}}:
-	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r12
-	movq (%r12), %r12
+	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
+	movq (%r10), %r10
 	jmp __lfi_trampoline
 {{- end}}
 

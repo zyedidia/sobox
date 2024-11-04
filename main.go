@@ -5,14 +5,15 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
-	"html/template"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
+	"text/template"
 
 	"golang.org/x/exp/maps"
 )
@@ -54,7 +55,8 @@ func run(command string, args ...string) {
 }
 
 func ident(s string) string {
-	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s, ".", "__"), "-", "__"), "/", "__")
+	rgx := regexp.MustCompile("[-./+]")
+	return rgx.ReplaceAllString(s, "__")
 }
 
 func execTemplate(w io.Writer, name string, data string, vars map[string]any, funcs template.FuncMap) {
@@ -223,7 +225,19 @@ func main() {
 		log.Fatal(err)
 	}
 	for _, obj := range objs {
-		if _, ok := objmap[obj]; !ok {
+		ok := false
+
+		_, hasLinker := objmap["ld-musl-x86_64.so.1"]
+		if obj == "libc.so" && hasLinker {
+			ok = true
+		}
+
+		for _, mapped := range objmap {
+			if strings.Contains(mapped, obj) {
+				ok = true
+			}
+		}
+		if !ok {
 			log.Fatalf("error: library requires %s, but no object provided", obj)
 		}
 	}
