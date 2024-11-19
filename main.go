@@ -21,6 +21,9 @@ import (
 //go:embed embed/libinit.c
 var libinit string
 
+//go:embed embed/cbtrampolines.s
+var cbtrampolines string
+
 //go:embed embed/stub.s.in
 var stub string
 
@@ -204,6 +207,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fcbtramp, err := os.Create(filepath.Join(gen, "cbtrampolines.s"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = fcbtramp.WriteString(cbtrampolines)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	stubgen := filepath.Join(gen, "stub.elf")
 
@@ -253,5 +264,5 @@ func main() {
 		out = getname(solib) + ".box.so"
 	}
 
-	run(cc, fincludes.Name(), ftrampolines.Name(), flibinit.Name(), "-llfix", "-shared", "-O2", "-fPIC", "-o", out)
+	run(cc, fincludes.Name(), ftrampolines.Name(), flibinit.Name(), fcbtramp.Name(), "-llfix", "-shared", "-O2", "-fPIC", "-o", out)
 }

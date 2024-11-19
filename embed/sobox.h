@@ -24,3 +24,13 @@ void* sbx_stackpush(size_t n);
 //
 // TODO: sbx_stackpop is unimplemented
 void sbx_stackpop(size_t n);
+
+// sbx_register_cb registers 'fn' as a callback.
+//
+// Returns a pointer in the sandbox that the sandbox can use to invoke the
+// callback. The 'stackframe' argument gives the size of stack arguments that
+// must be copied when 'fn' is invoked.
+void* sbx_register_cb(void* fn, size_t stackframe);
+
+// sbx_unregister_cb unregisters 'fn' as a callback.
+void sbx_unregister_cb(void* fn);
