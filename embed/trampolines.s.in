@@ -45,6 +45,8 @@ sbx_{{$sym}}:
 __lfi_trampotable:
 
 {{- range $sym := .syms}}
+.global sbx_addr_{{$sym}}
+sbx_addr_{{$sym}}:
 __lfisym_{{$sym}}:
 	.quad 0
 {{- end}}
