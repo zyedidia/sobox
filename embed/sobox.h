@@ -34,3 +34,6 @@ void* sbx_register_cb(void* fn, size_t stackframe);
 
 // sbx_unregister_cb unregisters 'fn' as a callback.
 void sbx_unregister_cb(void* fn);
+
+// sbx_addr returns the address in the sandbox of the given sandbox function.
+void* sbx_addr(void* fn);

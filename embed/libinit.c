@@ -32,6 +32,7 @@ extern size_t sbx_nfiles;
 
 extern void* __lfi_trampotable[];
 extern size_t __lfi_trampotable_size;
+extern char* __lfi_trampolines;
 
 static struct File*
 findfile(const char* filename)
@@ -233,4 +234,15 @@ sbx_unregister_cb(void* fn)
     callbacks[slot] = NULL;
     __atomic_store_n(&cbentries_alias[slot].target, 0, __ATOMIC_SEQ_CST);
     __atomic_store_n(&cbentries_alias[slot].trampoline, 0, __ATOMIC_SEQ_CST);
+}
+
+void*
+sbx_addr(void* sym)
+{
+    const size_t trampoline_size = 16;
+    for (size_t i = 0; i < __lfi_trampotable_size; i++) {
+        if (&__lfi_trampolines[i * trampoline_size] == sym)
+            return __lfi_trampotable[i];
+    }
+    return NULL;
 }

@@ -23,7 +23,10 @@ __sbx_entry:
 	jmpq *%r10
 	int3
 
+.global __lfi_trampolines
+__lfi_trampolines:
 {{- range $sym := .syms }}
+.p2align 4
 .global {{$sym}}
 {{$sym}}:
 	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
@@ -32,6 +35,7 @@ __sbx_entry:
 {{- end}}
 
 {{- range $sym := .sbxsyms}}
+.p2align 4
 .global sbx_{{$sym}}
 sbx_{{$sym}}:
 	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
@@ -45,8 +49,6 @@ sbx_{{$sym}}:
 __lfi_trampotable:
 
 {{- range $sym := .syms}}
-.global sbx_addr_{{$sym}}
-sbx_addr_{{$sym}}:
 __lfisym_{{$sym}}:
 	.quad 0
 {{- end}}
