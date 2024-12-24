@@ -55,6 +55,7 @@ install_trampotable(void** table)
 static bool
 readfile(const char* filename, uint8_t** data, size_t* size)
 {
+    printf("read %s\n", filename);
     struct File* f = findfile(filename);
     if (!f)
         return false;

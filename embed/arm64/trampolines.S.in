@@ -1,0 +1,84 @@
+.section ".text.trampolines"
+
+#define N_RTCALLS 256
+#define PROC_REGS 16
+#define REG_BASE  x21
+#define REG_SYS_  x25
+
+__lfi_trampoline:
+	stp d8, d9,   [sp, #-16]!
+	stp d10, d11, [sp, #-16]!
+	stp d12, d13, [sp, #-16]!
+	stp d14, d15, [sp, #-16]!
+	stp x19, x20, [sp, #-16]!
+	stp x21, x22, [sp, #-16]!
+	stp x23, x24, [sp, #-16]!
+	stp x25, x26, [sp, #-16]!
+	stp x27, x28, [sp, #-16]!
+	stp x29, x30, [sp, #-16]!
+#ifdef __APPLE__
+	ldr REG_BASE, [REG_SYS, 8*N_RTCALLS+8]
+#else
+	mrs	REG_BASE, tpidr_el0
+	add	REG_BASE, REG_BASE, #:tprel_hi12:lfi_myproc, lsl #12
+	add	REG_BASE, REG_BASE, #:tprel_lo12_nc:lfi_myproc
+	ldr	REG_BASE, [REG_BASE]
+#endif
+	// save kernel stack
+	mov x11, sp
+	str x11, [REG_BASE]
+	// set user stack
+	ldr x11, [REG_BASE, PROC_REGS+16*15+8]
+	mov sp, x11
+	// set return address to __lfisym_retfn
+	adrp x11, __lfisym_retfn
+	ldr x30, [x11, :lo12:__lfisym_retfn]
+	// set base pointer
+	ldr REG_BASE, [REG_BASE, PROC_REGS+8*21]
+	// set address pointer to a valid value
+	mov x18, REG_BASE
+__sbx_entry:
+	add x10, REG_BASE, w10, uxtw
+	br x10
+	brk #0
+
+.global __lfi_trampolines
+__lfi_trampolines:
+{{- range $sym := .syms }}
+.p2align 4
+.global {{$sym}}
+{{$sym}}:
+	adrp x10, __lfisym_{{$sym}}
+	ldr x10, [x10, :lo12:__lfisym_{{$sym}}]
+	b __lfi_trampoline
+{{- end}}
+
+{{- range $sym := .sbxsyms}}
+.p2align 4
+.global sbx_{{$sym}}
+sbx_{{$sym}}:
+	adrp x10, __lfisym_{{$sym}}
+	ldr x10, [x10, :lo12:__lfisym_{{$sym}}]
+	b __lfi_trampoline
+{{- end}}
+
+.section ".data.trampolines"
+
+.global __lfi_trampotable
+__lfi_trampotable:
+
+{{- range $sym := .syms}}
+__lfisym_{{$sym}}:
+	.quad 0
+{{- end}}
+
+{{- range $sym := .sbxsyms}}
+__lfisym_{{$sym}}:
+	.quad 0
+{{- end}}
+
+.global __lfi_trampotable_size
+__lfi_trampotable_size:
+	.quad {{.nsyms}}+{{.nsbxsyms}}
+
+.section .note.GNU-stack,"",@progbits

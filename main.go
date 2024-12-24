@@ -21,13 +21,13 @@ import (
 //go:embed embed/libinit.c
 var libinit string
 
-//go:embed embed/cbtrampolines.s
+//go:embed embed/arm64/cbtrampolines.s
 var cbtrampolines string
 
-//go:embed embed/stub.s.in
+//go:embed embed/arm64/stub.s.in
 var stub string
 
-//go:embed embed/trampolines.s.in
+//go:embed embed/arm64/trampolines.S.in
 var trampolines string
 
 //go:embed embed/includes.c.in
@@ -191,7 +191,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ftrampolines, err := os.Create(filepath.Join(gen, "trampolines.s"))
+	ftrampolines, err := os.Create(filepath.Join(gen, "trampolines.S"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -218,7 +218,7 @@ func main() {
 
 	stubgen := filepath.Join(gen, "stub.elf")
 
-	lficc := getenv("LFICC", "x86_64-lfi-linux-musl-gcc")
+	lficc := getenv("LFICC", "aarch64-lfi-linux-musl-gcc")
 
 	genStub(exports, fstub)
 
@@ -228,7 +228,7 @@ func main() {
 	ftrampolines.Close()
 
 	run(lficc, fstub.Name(), "-o", stubgen, "-L"+filepath.Dir(solib), "-l"+libname(solib))
-	run("patchelf", "--set-interpreter", "ld-musl-x86_64.so.1", stubgen)
+	run("patchelf", "--set-interpreter", "ld-musl-aarch64.so.1", stubgen)
 	objmap["stub"] = stubgen
 
 	objs, err := ef.DynString(elf.DT_NEEDED)
@@ -238,7 +238,7 @@ func main() {
 	for _, obj := range objs {
 		ok := false
 
-		_, hasLinker := objmap["ld-musl-x86_64.so.1"]
+		_, hasLinker := objmap["ld-musl-aarch64.so.1"]
 		if obj == "libc.so" && hasLinker {
 			ok = true
 		}
