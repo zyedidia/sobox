@@ -54,14 +54,23 @@ is wrapped.
 
 # Performance
 
-Limited benchmarking has been done on an AMD Ryzen 9 7950X CPU. Below are
-measurements for calling an `int add(int, int)` function with and without
-sandboxing.
+Limited benchmarking has been done on an AMD Ryzen 9 7950X and an Arm Cortex
+X1. Below are measurements for calling an `int add(int, int)` function with and
+without sandboxing.
+
+**AMD Ryzen 9 7950X**
 
 | Platform | Cycles | Instructions | Time |
 | --- | --- | --- | --- |
 | Native | 9 | 9 | 1.6ns |
 | Sobox-LFI | 19 | 43 | 3.5ns |
+
+**Arm Cortex X1**
+
+| Platform | Cycles | Instructions | Time |
+| --- | --- | --- | --- |
+| Native | 3 | 11 | 1.1ns |
+| Sobox-LFI | 31 | 56 | 10.4ns |
 
 # `dlopen`
 
