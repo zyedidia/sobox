@@ -3,7 +3,7 @@
 #define N_RTCALLS 256
 #define PROC_REGS 16
 #define REG_BASE  x21
-#define REG_SYS_  x25
+#define REG_SYS   x25
 
 __lfi_trampoline:
 	stp d8, d9,   [sp, #-16]!
