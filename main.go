@@ -228,30 +228,8 @@ func main() {
 	ftrampolines.Close()
 
 	run(lficc, fstub.Name(), "-o", stubgen, "-L"+filepath.Dir(solib), "-l"+libname(solib))
-	run("patchelf", "--set-interpreter", "ld-musl-x86_64.so.1", stubgen)
+	run("patchelf", "--set-interpreter", "/lib/ld-musl-x86_64.so.1", stubgen)
 	objmap["stub"] = stubgen
-
-	objs, err := ef.DynString(elf.DT_NEEDED)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, obj := range objs {
-		ok := false
-
-		_, hasLinker := objmap["ld-musl-x86_64.so.1"]
-		if obj == "libc.so" && hasLinker {
-			ok = true
-		}
-
-		for _, mapped := range objmap {
-			if strings.Contains(mapped, obj) {
-				ok = true
-			}
-		}
-		if !ok {
-			log.Fatalf("error: library requires %s, but no object provided", obj)
-		}
-	}
 
 	genIncludes(objmap, fincludes)
 
@@ -264,5 +242,5 @@ func main() {
 		out = getname(solib) + ".box.so"
 	}
 
-	run(cc, fincludes.Name(), ftrampolines.Name(), flibinit.Name(), fcbtramp.Name(), "-llfix", "-shared", "-O2", "-fPIC", "-o", out)
+	run(cc, fincludes.Name(), ftrampolines.Name(), flibinit.Name(), fcbtramp.Name(), "-ltux", "-shared", "-O2", "-fPIC", "-o", out, "-g")
 }

@@ -17,7 +17,7 @@ libadd/libadd.native.so: libadd/add.c
 	gcc $< -O2 -shared -o $@
 
 libadd/libadd.lfi.box.so: libadd/libadd.lfi.so
-	sobox -map ld-musl-x86_64.so.1=/opt/lfi-amd64-tp/x86_64-lfi-linux-musl/lib/ld-musl-x86_64.so.1 \
+	sobox -map /lib/ld-musl-x86_64.so.1=/opt/lfi-amd64-tp/x86_64-lfi-linux-musl/lib/ld-musl-x86_64.so.1 \
 		-map /lib/libadd.lfi.so=$< \
 		-o $@ $<
 

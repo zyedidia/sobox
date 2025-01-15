@@ -8,7 +8,7 @@ __lfi_trampoline:
 	pushq %r12
 	pushq %rbx
 	pushq %rbp
-	movq lfi_myproc@gottpoff(%rip), %r11
+	movq lfi_myctx@gottpoff(%rip), %r11
 	movq %fs:(%r11), %r11
 	movq %rsp, 0(%r11) # kstackp
 	movq 16(%r11), %rsp # stack pointer

@@ -3,14 +3,14 @@
 .global sbx_cbtrampoline
 sbx_cbtrampoline:
 	// Entrypoint for callbacks. Callback target is in %r10.
-	movq lfi_myproc@gottpoff(%rip), %r11
+	movq lfi_myctx@gottpoff(%rip), %r11
 	movq %fs:(%r11), %r11
 	xchg 0(%r11), %rsp
 
 	callq *%r10
 
 	// restore %rsp
-	movq lfi_myproc@gottpoff(%rip), %r11
+	movq lfi_myctx@gottpoff(%rip), %r11
 	movq %fs:(%r11), %r11
 	xchg 0(%r11), %rsp
 
