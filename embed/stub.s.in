@@ -1,17 +1,36 @@
 .section ".text.stub"
+
 .p2align 5
 .global main
 main:
+	pushq %rdi
+	// call sbx_thread_create
+	leaq _lfi_pause(%rip), %rdi
+	leaq .Lret(%rip), %rsi
+	pushq %rsi
+	jmp sbx_thread_create
+.p2align 5
+.Lret:
+	popq %rdi
 	// load address of trampoline table and then exit
 	leaq trampotable(%rip), %rdi
+.p2align 5
+.global _lfi_pause
+_lfi_pause:
 	mov $60, %rax
 	syscall
 	int3
 .p2align 5
-.global retfn
-retfn:
-	// special pseudo-instruction for calling the return runtime call
-	libret
+.global _lfi_retfn
+_lfi_retfn:
+	// special runtime call for invoking lfi_ret
+	//lfi:disable
+	.bundle_lock
+	leaq 1024f(%rip), %r11
+	jmpq *24(%r14)
+	1024:
+	.bundle_unlock
+	//lfi:enable
 	int3
 .section ".data.trampotable"
 .global trampotable

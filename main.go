@@ -35,7 +35,8 @@ var includes string
 
 // Symbols inside the sandbox needed by libsobox
 var sbxsyms = []string{
-	"retfn",
+	"_lfi_retfn",
+	"_lfi_pause",
 	"malloc",
 	"free",
 }
@@ -218,7 +219,7 @@ func main() {
 
 	stubgen := filepath.Join(gen, "stub.elf")
 
-	lficc := getenv("LFICC", "x86_64-lfi-linux-musl-gcc")
+	lficc := getenv("LFICC", "x86_64-lfi-linux-musl-clang")
 
 	genStub(exports, fstub)
 
@@ -242,5 +243,5 @@ func main() {
 		out = getname(solib) + ".box.so"
 	}
 
-	run(cc, fincludes.Name(), ftrampolines.Name(), flibinit.Name(), fcbtramp.Name(), "-ltux", "-shared", "-O2", "-fPIC", "-o", out, "-g")
+	run(cc, fincludes.Name(), ftrampolines.Name(), flibinit.Name(), fcbtramp.Name(), "-llfi", "-shared", "-O2", "-fPIC", "-o", out, "-g")
 }

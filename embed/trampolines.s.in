@@ -10,10 +10,38 @@ __lfi_trampoline:
 	pushq %rbp
 	movq lfi_myctx@gottpoff(%rip), %r11
 	movq %fs:(%r11), %r11
+
+	cmpq $0, %r11
+	jne 1f
+	# slow path
+	pushq %rdi
+	pushq %rdi # for stack alignment
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
+	pushq %r8
+	pushq %r9
+	pushq %r10
+	pushq %r11
+	mov %rdi, %r11
+	callq sbx_setup
+	popq %r11
+	popq %r10
+	popq %r9
+	popq %r8
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi
+	popq %rdi
+	movq lfi_myctx@gottpoff(%rip), %r11
+	movq %fs:(%r11), %r11
+1:
+
 	movq %rsp, 0(%r11) # kstackp
 	movq 16(%r11), %rsp # stack pointer
 	movq 16+14*8(%r11), %r14 # base pointer
-	mov __lfisym_retfn@GOTPCREL(%rip), %r11
+	mov __lfisym__lfi_retfn@GOTPCREL(%rip), %r11
 	mov (%r11), %r11
 	andq $0xfffffffffffffff0, %rsp
 	pushq %r11

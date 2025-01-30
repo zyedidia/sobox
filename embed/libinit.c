@@ -98,6 +98,7 @@ sbx_init(void)
             .open = fsopen,
         },
     });
+
     if (!tux) {
         fprintf(stderr, "sobox: error loading LFI: %s\n", lfi_strerror());
         exit(1);
@@ -122,12 +123,15 @@ sbx_init(void)
         exit(1);
     }
 
+    lfi_tux_soboxinit(tux, true);
+
     uint64_t r = lfi_tux_proc_run(p);
-    printf("%lx\n", r);
     if (r < 256) {
         fprintf(stderr, "sobox: failed to start LFI process\n");
         exit(1);
     }
+
+    lfi_tux_soboxinit(tux, false);
 
     // TODO: validate the trampoline table (its location) before installing it,
     // since intalling it involves reading from sandbox memory. Possibly also
@@ -135,6 +139,15 @@ sbx_init(void)
     // uses a safe bundle-aligned jump for entry, but probably still a good
     // idea).
     install_trampotable((void**) r);
+}
+
+void
+sbx_setup(struct LFIContext* ctx)
+{
+    // Allocate TuxThread
+    // * allocate stack
+    // * allocate tls (how?)
+    assert(!"sbx_setup: unimplemented");
 }
 
 void*
