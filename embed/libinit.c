@@ -39,6 +39,9 @@ extern void* __lfi_trampotable[];
 extern size_t __lfi_trampotable_size;
 extern char* __lfi_trampolines;
 
+extern void* __lfisym__lfi_pause;
+extern void* __lfisym_sbx_thread_create;
+
 static struct FileData*
 findfiledata(const char* filename)
 {
@@ -144,10 +147,7 @@ sbx_init(void)
 void
 sbx_setup(struct LFIContext* ctx)
 {
-    // Allocate TuxThread
-    // * allocate stack
-    // * allocate tls (how?)
-    assert(!"sbx_setup: unimplemented");
+    lfi_thread_init(__lfisym_sbx_thread_create, __lfisym__lfi_pause);
 }
 
 void*
