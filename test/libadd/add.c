@@ -6,6 +6,12 @@ int add(int a, int b) {
     return a + b;
 }
 
+_Thread_local int x;
+
+void print() {
+    printf("thread local x: %d\n", x++);
+}
+
 __attribute__((constructor)) void init() {
     printf("testing libadd's constructor\n");
 }

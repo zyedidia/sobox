@@ -1,7 +1,7 @@
-box.out: main.c libadd/libadd.lfi.box.so
+box.out: thread.c libadd/libadd.lfi.box.so
 	gcc $< -O2 -Llibadd -ladd.lfi.box -o $@ -DSOBOX -I../embed
 
-native.out: main.c libadd/libadd.native.so
+native.out: thread.c libadd/libadd.native.so
 	gcc $< -O2 -Llibadd -ladd.native -o $@
 
 run-box: box.out
@@ -11,7 +11,7 @@ run-native: native.out
 	LD_LIBRARY_PATH=./libadd ./$<
 
 libadd/libadd.lfi.so: libadd/add.c
-	x86_64-lfi-linux-musl-clang $< -O2 -shared -o $@
+	x86_64-lfi-linux-musl-clang $< -O2 -shared -o $@ -fPIC
 
 libadd/libadd.native.so: libadd/add.c
 	gcc $< -O2 -shared -o $@ -fPIC -ftls-model=initial-exec
