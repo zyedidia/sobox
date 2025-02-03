@@ -4,11 +4,11 @@
 .global main
 main:
 	pushq %rdi
-	// call sbx_thread_create
+	// call _lfi_thread_create(&_lfi_pause, &.Lret)
 	leaq _lfi_pause(%rip), %rdi
 	leaq .Lret(%rip), %rsi
 	pushq %rsi
-	jmp sbx_thread_create
+	jmp _lfi_thread_create
 .p2align 5
 .Lret:
 	popq %rdi

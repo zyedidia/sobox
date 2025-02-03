@@ -6,3 +6,4 @@ todo.txt
 *.o
 gen
 /sobox
+/examples

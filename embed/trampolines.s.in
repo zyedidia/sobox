@@ -91,6 +91,6 @@ __lfi_trampotable_size:
 	.quad {{.nsyms}}+{{.nsbxsyms}}
 
 .global __lfisym__lfi_pause
-.global __lfisym_sbx_thread_create
+.global __lfisym__lfi_thread_create
 
 .section .note.GNU-stack,"",@progbits

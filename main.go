@@ -27,6 +27,9 @@ var cbtrampolines string
 //go:embed embed/stub.s.in
 var stub string
 
+//go:embed embed/stub_thread.c
+var stub_thread string
+
 //go:embed embed/trampolines.s.in
 var trampolines string
 
@@ -37,6 +40,7 @@ var includes string
 var sbxsyms = []string{
 	"_lfi_retfn",
 	"_lfi_pause",
+	"_lfi_thread_create",
 	"malloc",
 	"free",
 }
@@ -192,6 +196,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fstub_thread, err := os.Create(filepath.Join(gen, "stub_thread.c"))
+	if err != nil {
+		log.Fatal(err)
+	}
 	ftrampolines, err := os.Create(filepath.Join(gen, "trampolines.s"))
 	if err != nil {
 		log.Fatal(err)
@@ -216,6 +224,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	_, err = fstub_thread.WriteString(stub_thread)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	stubgen := filepath.Join(gen, "stub.elf")
 
@@ -228,7 +240,7 @@ func main() {
 	fstub.Close()
 	ftrampolines.Close()
 
-	run(lficc, fstub.Name(), "-o", stubgen, "-L"+filepath.Dir(solib), "-l"+libname(solib))
+	run(lficc, fstub.Name(), fstub_thread.Name(), "-o", stubgen, "-L"+filepath.Dir(solib), "-l"+libname(solib), "-O2")
 	run("patchelf", "--set-interpreter", "/lib/ld-musl-x86_64.so.1", stubgen)
 	objmap["stub"] = stubgen
 
