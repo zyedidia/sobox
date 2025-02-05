@@ -1,0 +1,5 @@
+.text
+
+.global {{.lib}}_cbtrampoline
+{{.lib}}_cbtrampoline:
+	brk #0

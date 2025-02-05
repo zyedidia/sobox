@@ -24,7 +24,7 @@ __lfi_trampoline:
 	pushq %r10
 	pushq %r11
 	mov %rdi, %r11
-	callq {{ .lib }}_setup
+	callq {{.lib}}_setup
 	popq %r11
 	popq %r10
 	popq %r9
@@ -64,8 +64,8 @@ __lfi_trampolines:
 
 {{- range $sym := .exposed}}
 .p2align 4
-.global {{ $.lib }}_{{$sym}}
-{{ $.lib }}_{{$sym}}:
+.global {{$.lib}}_{{$sym}}
+{{$.lib}}_{{$sym}}:
 	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
 	movq (%r10), %r10
 	jmp __lfi_trampoline
@@ -82,6 +82,7 @@ __lfisym_{{$sym}}:
 {{- end}}
 
 {{- range $sym := .exposed}}
+.global __lfisym_{{$sym}}
 __lfisym_{{$sym}}:
 	.quad 0
 {{- end}}

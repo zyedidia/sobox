@@ -8,6 +8,8 @@
 void* liblua_malloc(size_t n);
 void liblua_free(void* p);
 
+void liblua_init(void);
+
 int seluaL_dostring(lua_State* L, char* s) {
     size_t len = strlen(s);
     char* sbx_s = liblua_malloc(len);
@@ -18,6 +20,8 @@ int seluaL_dostring(lua_State* L, char* s) {
 }
 
 int main() {
+    liblua_init();
+
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
 

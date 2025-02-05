@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -30,7 +31,7 @@ func CompileStub(dir, lib, libpath string, static bool) string {
 
 	args := []string{
 		filepath.Join(dir, "embed/stub/thread.c"),
-		filepath.Join(dir, "embed/stub/arch/x64/main.s"),
+		filepath.Join(dir, fmt.Sprintf("embed/stub/arch/%s/main.s", Arch(*arch))),
 		"-o", stub,
 		"-L" + filepath.Dir(libpath),
 		"-l" + LibName(lib),
@@ -43,7 +44,7 @@ func CompileStub(dir, lib, libpath string, static bool) string {
 
 	Run(*lficc, args...)
 	if !static {
-		Run("patchelf", "--set-interpreter", "/lib/ld-musl-x86_64.so.1", stub)
+		Run("patchelf", "--set-interpreter", fmt.Sprintf("/lib/ld-musl-%s.so.1", GNUArch(*arch)), stub)
 	}
 	return stub
 }
@@ -52,8 +53,8 @@ func CompileStaticLib(dir, out string) {
 	files := []string{
 		filepath.Join(dir, "embed/lib/includes.c"),
 		filepath.Join(dir, "embed/lib/lib.c"),
-		filepath.Join(dir, "embed/lib/arch/x64/callback.s"),
-		filepath.Join(dir, "embed/lib/arch/x64/trampolines.s"),
+		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.s", Arch(*arch))),
+		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/trampolines.S", Arch(*arch))),
 	}
 	var objs []string
 	for _, f := range files {
@@ -68,8 +69,8 @@ func CompileDynamicLib(dir, out string) {
 	Run(*cc,
 		filepath.Join(dir, "embed/lib/includes.c"),
 		filepath.Join(dir, "embed/lib/lib.c"),
-		filepath.Join(dir, "embed/lib/arch/x64/callback.s"),
-		filepath.Join(dir, "embed/lib/arch/x64/trampolines.s"),
+		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.s", Arch(*arch))),
+		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/trampolines.S", Arch(*arch))),
 		"-llfi", "-O2", "-fPIC", "-shared",
 		"-o", out,
 	)

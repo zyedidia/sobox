@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"embed"
@@ -33,6 +34,37 @@ func fatal(v ...interface{}) {
 	os.Exit(1)
 }
 
+func Arch(a string) string {
+	switch a {
+	case "x64", "amd64", "x86-64", "x86_64":
+		return "x64"
+	case "arm64", "aarch64":
+		return "arm64"
+	}
+	fatal("invalid arch:", a)
+	panic("unreachable")
+}
+
+func GoArch(a string) string {
+	switch Arch(a) {
+	case "x64":
+		return "amd64"
+	case "arm64":
+		return "arm64"
+	}
+	panic("unreachable")
+}
+
+func GNUArch(a string) string {
+	switch Arch(a) {
+	case "x64":
+		return "x86_64"
+	case "arm64":
+		return "aarch64"
+	}
+	panic("unreachable")
+}
+
 func main() {
 	objmap := make(map[string]string)
 	flag.Func("map", "map object to file", func(s string) error {
@@ -55,6 +87,11 @@ func main() {
 	if len(args) <= 0 {
 		fatal("no input")
 	}
+
+	if *arch == "" {
+		*arch = runtime.GOARCH
+	}
+
 	lib := args[0]
 	f, err := os.Open(lib)
 	if err != nil {
@@ -94,7 +131,7 @@ func main() {
 	log.Println("generating bindings with prefix", *libname)
 
 	if *lficc == "" {
-		*lficc = "x86_64-lfi-linux-musl-clang"
+		*lficc = GNUArch(*arch) + "-lfi-linux-musl-clang"
 	}
 
 	if *exposeFlag != "" {

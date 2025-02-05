@@ -1,7 +1,7 @@
 .text
 
-.global lfibind_cbtrampoline
-lfibind_cbtrampoline:
+.global {{.lib}}_cbtrampoline
+{{.lib}}_cbtrampoline:
 	// Entrypoint for callbacks. Callback target is in %r10.
 	movq lfi_myctx@gottpoff(%rip), %r11
 	movq %fs:(%r11), %r11

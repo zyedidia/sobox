@@ -30,7 +30,7 @@ struct File {
 
 static bool cbinit(struct LFIContext* ctx);
 
-extern void lfibind_cbtrampoline();
+extern void {{.lib}}_cbtrampoline();
 
 extern char* lfibind_filenames[];
 extern struct FileData lfibind_filedata[];
@@ -85,7 +85,7 @@ err:
 
 static struct Tux* tux;
 
-__attribute__((constructor)) void
+void
 {{ .lib }}_init(void)
 {
     struct LFIPlatform* plat = lfi_new_plat(getpagesize());
@@ -252,7 +252,7 @@ void*
     // write 'fn' into the 'target' field for the chosen slot.
     __atomic_store_n(&cbentries_alias[slot].target, (uint64_t) fn, __ATOMIC_SEQ_CST);
     // write the trampoline into the 'trampoline' field for the chosen slot
-    __atomic_store_n(&cbentries_alias[slot].trampoline, (uint64_t) lfibind_cbtrampoline, __ATOMIC_SEQ_CST);
+    __atomic_store_n(&cbentries_alias[slot].trampoline, (uint64_t) {{.lib}}_cbtrampoline, __ATOMIC_SEQ_CST);
 
     // Mark the slot as allocated.
     callbacks[slot] = fn;
