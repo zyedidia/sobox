@@ -1,9 +1,6 @@
-msg.md
-cmds.txt
 todo.txt
-*.out
 *.so
-*.o
-gen
-/sobox
-/examples
+*.a
+/lfibind
+*.out
+/test/lua/lua

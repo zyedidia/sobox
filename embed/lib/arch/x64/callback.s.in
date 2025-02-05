@@ -1,7 +1,7 @@
 .text
 
-.global sbx_cbtrampoline
-sbx_cbtrampoline:
+.global lfibind_cbtrampoline
+lfibind_cbtrampoline:
 	// Entrypoint for callbacks. Callback target is in %r10.
 	movq lfi_myctx@gottpoff(%rip), %r11
 	movq %fs:(%r11), %r11
@@ -16,7 +16,7 @@ sbx_cbtrampoline:
 
 	// return back to sandbox
 
-// This pop instruction could segfault if the sandbox has provided a bad stack.
+	// This pop instruction could segfault if the sandbox has provided a bad stack.
 userpop:
 	popq %r11
 	// TODO: different sequence for large sandboxes is needed

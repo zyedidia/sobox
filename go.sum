@@ -1,2 +1,4 @@
-golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c h1:7dEasQXItcW1xKJ2+gg5VOiBnqWrJc+rq0DPKyvvdbY=
-golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c/go.mod h1:NQtJDoLvd6faHhE7m4T/1IY708gDefGGjR/iUW8yQQ8=
+github.com/erikgeiser/ar v0.0.0-20230310200753-fb6b8bb217f0 h1:wWOCmhGp5ebnKGv779HmTr0EuegedsCR/egFpyV3b1w=
+github.com/erikgeiser/ar v0.0.0-20230310200753-fb6b8bb217f0/go.mod h1:s9xUpVWR70g0mg48YTzgzRG1h7HwzvxTOjPXcww052Y=
+golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c h1:KL/ZBHXgKGVmuZBZ01Lt57yE5ws8ZPSkkihmEyq7FXc=
+golang.org/x/exp v0.0.0-20250128182459-e0ece0dbea4c/go.mod h1:tujkw807nyEEAamNbDrEGzRav+ilXA7PCRAd6xsmwiU=

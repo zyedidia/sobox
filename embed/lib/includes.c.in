@@ -20,7 +20,7 @@ __asm__(".section " INCBIN_SECTION "\n" \
 extern __attribute__((aligned(16))) uint8_t __lfidata_ ## name ## _start[]; \
 extern                              uint8_t __lfidata_ ## name ## _end[]
 
-char* sbx_filenames[] = {
+char* lfibind_filenames[] = {
 {{- range $file := .files}}
     "{{$file}}",
 {{- end}}
@@ -35,10 +35,10 @@ struct File {
     uint8_t* end;
 };
 
-struct File sbx_filedata[] = {
+struct File lfibind_filedata[] = {
 {{- range $file := .files}}
     (struct File){&__lfidata_{{ident $file}}_start[0], &__lfidata_{{ident $file}}_end[0]},
 {{- end}}
 };
 
-size_t sbx_nfiles = {{.nfiles}};
+size_t lfibind_nfiles = {{.nfiles}};

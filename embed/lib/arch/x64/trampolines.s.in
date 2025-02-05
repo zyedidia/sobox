@@ -1,6 +1,6 @@
 .section ".text.trampolines"
 
-.global __lfi_trampoline, __sbx_entry
+.global __lfi_trampoline
 __lfi_trampoline:
 	pushq %r15
 	pushq %r14
@@ -24,7 +24,7 @@ __lfi_trampoline:
 	pushq %r10
 	pushq %r11
 	mov %rdi, %r11
-	callq sbx_setup
+	callq {{ .lib }}_setup
 	popq %r11
 	popq %r10
 	popq %r9
@@ -47,13 +47,13 @@ __lfi_trampoline:
 	pushq %r11
 	xor %r11d, %r11d
 	# TODO: make sure r10 is bundle-aligned and within the sandbox
-__sbx_entry:
+.entry:
 	jmpq *%r10
 	int3
 
 .global __lfi_trampolines
 __lfi_trampolines:
-{{- range $sym := .syms }}
+{{- range $sym := .exported }}
 .p2align 4
 .global {{$sym}}
 {{$sym}}:
@@ -62,10 +62,10 @@ __lfi_trampolines:
 	jmp __lfi_trampoline
 {{- end}}
 
-{{- range $sym := .sbxsyms}}
+{{- range $sym := .exposed}}
 .p2align 4
-.global sbx_{{$sym}}
-sbx_{{$sym}}:
+.global {{ $.lib }}_{{$sym}}
+{{ $.lib }}_{{$sym}}:
 	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
 	movq (%r10), %r10
 	jmp __lfi_trampoline
@@ -76,19 +76,19 @@ sbx_{{$sym}}:
 .global __lfi_trampotable
 __lfi_trampotable:
 
-{{- range $sym := .syms}}
+{{- range $sym := .exported}}
 __lfisym_{{$sym}}:
 	.quad 0
 {{- end}}
 
-{{- range $sym := .sbxsyms}}
+{{- range $sym := .exposed}}
 __lfisym_{{$sym}}:
 	.quad 0
 {{- end}}
 
 .global __lfi_trampotable_size
 __lfi_trampotable_size:
-	.quad {{.nsyms}}+{{.nsbxsyms}}
+	.quad {{.nexported}}+{{.nexposed}}
 
 .global __lfisym__lfi_pause
 .global __lfisym__lfi_thread_create

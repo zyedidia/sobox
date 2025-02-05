@@ -1,152 +1,38 @@
 package main
 
 import (
-	"debug/elf"
-	_ "embed"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"regexp"
-	"sort"
 	"strings"
-	"text/template"
 
-	"golang.org/x/exp/maps"
+	"embed"
 )
 
-//go:embed embed/libinit.c
-var libinit string
+//go:embed embed
+var files embed.FS
 
-//go:embed embed/cbtrampolines.s
-var cbtrampolines string
+var out = flag.String("o", "", "output file")
+var exportFlag = flag.String("export", "", "comma-separated list of exported symbols")
+var exposeFlag = flag.String("expose", "", "comma-separated list of exposed symbols")
+var verbose = flag.Bool("V", false, "verbose output")
+var libname = flag.String("lib", "", "library name")
+var dir = flag.String("dir", "", "directory for temporary files; uses system tempdir if empty")
+var cc = flag.String("cc", "cc", "system C compiler")
+var lficc = flag.String("lficc", "", "LFI C compiler (autodetected if empty)")
+var arch = flag.String("arch", "", "target architecture (x64, arm64)")
+var showExports = flag.Bool("show-exports", false, "show exported symbols and exit")
 
-//go:embed embed/stub.s.in
-var stub string
-
-//go:embed embed/stub_thread.c
-var stub_thread string
-
-//go:embed embed/trampolines.s.in
-var trampolines string
-
-//go:embed embed/includes.c.in
-var includes string
-
-// Symbols inside the sandbox needed by libsobox
-var sbxsyms = []string{
-	"_lfi_retfn",
-	"_lfi_pause",
-	"_lfi_thread_create",
-	"malloc",
-	"free",
-}
-
-func fatal(err ...interface{}) {
-	fmt.Fprintln(os.Stderr, err...)
+func fatal(v ...interface{}) {
+	fmt.Fprintln(os.Stderr, v...)
 	os.Exit(1)
-}
-
-func run(command string, args ...string) {
-	cmd := exec.Command(command, args...)
-	log.Println(cmd)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-	err := cmd.Run()
-	if err != nil {
-		fatal(err)
-	}
-}
-
-func ident(s string) string {
-	rgx := regexp.MustCompile("[-./+]")
-	return rgx.ReplaceAllString(s, "__")
-}
-
-func execTemplate(w io.Writer, name string, data string, vars map[string]any, funcs template.FuncMap) {
-	tmpl := template.New(name)
-	tmpl.Funcs(funcs)
-	tmpl, err := tmpl.Parse(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = tmpl.Execute(w, vars)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func genIncludes(filemap map[string]string, w io.Writer) {
-	files := maps.Keys(filemap)
-	sort.Strings(files)
-
-	execTemplate(w, "includes", includes, map[string]any{
-		"files":  files,
-		"nfiles": len(files),
-	}, map[string]any{
-		"ident": ident,
-		"filename": func(s string) string {
-			if name, ok := filemap[s]; ok {
-				return name
-			}
-			log.Fatalf("no location given for file %s\n", s)
-			return ""
-		},
-	})
-}
-
-func genTrampolines(syms []elf.Symbol, w io.Writer) {
-	var symnames []string
-	for _, sym := range syms {
-		symnames = append(symnames, sym.Name)
-	}
-
-	execTemplate(w, "trampolines", trampolines, map[string]any{
-		"syms":     symnames,
-		"nsyms":    len(symnames),
-		"sbxsyms":  sbxsyms,
-		"nsbxsyms": len(sbxsyms),
-	}, nil)
-}
-
-func genStub(syms []elf.Symbol, w io.Writer) {
-	var symnames []string
-	for _, sym := range syms {
-		symnames = append(symnames, sym.Name)
-	}
-	execTemplate(w, "stub", stub, map[string]any{
-		"syms":    symnames,
-		"sbxsyms": sbxsyms,
-	}, nil)
-}
-
-func getname(solib string) string {
-	before, _, _ := strings.Cut(solib, ".so")
-	return before
-}
-
-func libname(solib string) string {
-	_, after, _ := strings.Cut(getname(filepath.Base(solib)), "lib")
-	return after
-}
-
-func getenv(varname string, defval string) string {
-	v := os.Getenv(varname)
-	if v != "" {
-		return v
-	}
-	return defval
 }
 
 func main() {
 	objmap := make(map[string]string)
-
-	outflag := flag.String("o", "", "output file")
-
 	flag.Func("map", "map object to file", func(s string) error {
 		parts := strings.SplitN(s, "=", 2)
 		if len(parts) != 2 {
@@ -157,103 +43,71 @@ func main() {
 	})
 
 	flag.Parse()
+
+	log.SetFlags(0)
+	if !*verbose {
+		log.SetOutput(io.Discard)
+	}
+
 	args := flag.Args()
 	if len(args) <= 0 {
-		log.Fatal("no input")
+		fatal("no input")
 	}
-	solib := args[0]
-	f, err := os.Open(solib)
+	lib := args[0]
+	f, err := os.Open(lib)
 	if err != nil {
-		log.Fatal(err)
-	}
-	ef, err := elf.NewFile(f)
-	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
-	syms, err := ef.Symbols()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var exports []elf.Symbol
-	for _, sym := range syms {
-		if elf.ST_BIND(sym.Info) == elf.STB_GLOBAL && elf.ST_TYPE(sym.Info) == elf.STT_FUNC && sym.Section != elf.SHN_UNDEF {
-			if sym.Name == "_init" || sym.Name == "_fini" {
-				// Musl inserts these symbols on shared libraries, but after we
-				// compile the stub they will be linked internally, and should
-				// not be exported.
-				continue
-			}
-			exports = append(exports, sym)
+	exportSet := make(map[string]bool)
+	if *exportFlag != "" {
+		syms := strings.Split(*exportFlag, ",")
+		for _, s := range syms {
+			exportSet[s] = true
 		}
 	}
 
-	gen := "gen"
-	os.MkdirAll(gen, os.ModePerm)
+	var exports []string
+	if strings.HasSuffix(lib, ".a") {
+		exports = StaticGetExports(f, exportSet)
+	} else if strings.HasSuffix(lib, ".so") {
+		exports = DynamicGetExports(f, exportSet)
+	} else {
+		fatal("expected *.a or *.so file, got", lib)
+	}
+	log.Println("exports:", exports)
 
-	fstub, err := os.Create(filepath.Join(gen, "stub.s"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	fstub_thread, err := os.Create(filepath.Join(gen, "stub_thread.c"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	ftrampolines, err := os.Create(filepath.Join(gen, "trampolines.s"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	fincludes, err := os.Create(filepath.Join(gen, "includes.c"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	flibinit, err := os.Create(filepath.Join(gen, "libinit.c"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = flibinit.WriteString(libinit)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fcbtramp, err := os.Create(filepath.Join(gen, "cbtrampolines.s"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = fcbtramp.WriteString(cbtrampolines)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = fstub_thread.WriteString(stub_thread)
-	if err != nil {
-		log.Fatal(err)
+	if *showExports {
+		for _, s := range exports {
+			fmt.Println(s)
+		}
+		os.Exit(0)
 	}
 
-	stubgen := filepath.Join(gen, "stub.elf")
-
-	lficc := getenv("LFICC", "x86_64-lfi-linux-musl-clang")
-
-	genStub(exports, fstub)
-
-	genTrampolines(exports, ftrampolines)
-
-	fstub.Close()
-	ftrampolines.Close()
-
-	run(lficc, fstub.Name(), fstub_thread.Name(), "-o", stubgen, "-L"+filepath.Dir(solib), "-l"+libname(solib), "-O2")
-	run("patchelf", "--set-interpreter", "/lib/ld-musl-x86_64.so.1", stubgen)
-	objmap["stub"] = stubgen
-
-	genIncludes(objmap, fincludes)
-
-	fincludes.Close()
-
-	cc := getenv("CC", "gcc")
-
-	out := *outflag
-	if out == "" {
-		out = getname(solib) + ".box.so"
+	if *libname == "" {
+		base := filepath.Base(lib)
+		*libname = strings.TrimSuffix(base, filepath.Ext(base))
 	}
 
-	run(cc, fincludes.Name(), ftrampolines.Name(), flibinit.Name(), fcbtramp.Name(), "-llfi", "-shared", "-O2", "-fPIC", "-o", out, "-g")
+	log.Println("generating bindings with prefix", *libname)
+
+	if *lficc == "" {
+		*lficc = "x86_64-lfi-linux-musl-clang"
+	}
+
+	if *exposeFlag != "" {
+		exposed = append(exposed, strings.Split(*exposeFlag, ",")...)
+	}
+
+	dir := WriteFiles(*dir, *libname, "embed/stub", exports, exposed, objmap)
+
+	objmap["stub"] = CompileStub(dir, *libname, lib, true /*static*/)
+
+	if *out == "" {
+		*out = *libname + "-box" + filepath.Ext(lib)
+	}
+
+	WriteFiles(dir, *libname, "embed/lib", exports, exposed, objmap)
+
+	CompileStaticLib(dir, *out)
 }

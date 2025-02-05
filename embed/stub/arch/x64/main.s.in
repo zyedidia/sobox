@@ -26,19 +26,20 @@ _lfi_retfn:
 	// special runtime call for invoking lfi_ret
 	//lfi:disable
 	.bundle_lock
-	leaq 1024f(%rip), %r11
+	leaq 1f(%rip), %r11
 	jmpq *24(%r14)
-	1024:
+1:
 	.bundle_unlock
 	//lfi:enable
 	int3
+
 .section ".data.trampotable"
 .global trampotable
 trampotable:
-{{- range $sym := .syms }}
+{{- range $sym := .exported }}
 	.quad {{$sym}}
 {{- end }}
-{{- range $sym := .sbxsyms}}
+{{- range $sym := .exposed}}
 	.quad {{$sym}}
 {{- end}}
 .section .note.GNU-stack,"",@progbits
