@@ -25,6 +25,8 @@ var cc = flag.String("cc", "cc", "system C compiler")
 var lficc = flag.String("lficc", "", "LFI C compiler (autodetected if empty)")
 var arch = flag.String("arch", "", "target architecture (x64, arm64)")
 var showExports = flag.Bool("show-exports", false, "show exported symbols and exit")
+var genStub = flag.Bool("gen-stub", false, "only generate files needed for the stub (but do not compile)")
+var genLib = flag.String("gen-lib", "", "only generate files needed for lib (but do not compile); must provide the stub.elf as input")
 
 func fatal(v ...interface{}) {
 	fmt.Fprintln(os.Stderr, v...)
@@ -101,7 +103,15 @@ func main() {
 
 	dir := WriteFiles(*dir, *libname, "embed/stub", exports, exposed, objmap)
 
-	objmap["stub"] = CompileStub(dir, *libname, lib, true /*static*/)
+	if *genStub {
+		os.Exit(0)
+	}
+
+	if *genLib != "" {
+		objmap["stub"] = *genLib
+	} else {
+		objmap["stub"] = CompileStub(dir, *libname, lib, true /*static*/)
+	}
 
 	if *out == "" {
 		*out = *libname + "-box" + filepath.Ext(lib)
