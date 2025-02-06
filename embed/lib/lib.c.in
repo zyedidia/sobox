@@ -148,9 +148,7 @@ void
 void
 {{ .lib }}_setup(void)
 {
-    printf("setup\n");
     lfi_thread_init(__lfisym__lfi_thread_create, __lfisym__lfi_pause);
-    printf("done with seutp\n");
 }
 
 void*
