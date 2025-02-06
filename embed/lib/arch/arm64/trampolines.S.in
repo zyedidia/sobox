@@ -58,15 +58,14 @@ __lfi_trampoline:
 	cbnz REG_BASE, 1f
 	b __lfi_trampoline_slowpath
 1:
+	ldr x12, [REG_BASE, PROC_REGS+16*15+8]
 	// save user sp to stack
-	ldr x11, [REG_BASE, PROC_REGS+16*15+8]
-	stp x11, xzr [sp, #16]!
+	stp x12, xzr, [sp, #-16]!
 	// save kernel stack
 	mov x11, sp
 	str x11, [REG_BASE]
 	// set user stack
-	ldr x11, [REG_BASE, PROC_REGS+16*15+8]
-	mov sp, x11
+	mov sp, x12
 	// set return address to __lfisym__lfi_retfn
 	adrp x11, __lfisym__lfi_retfn
 	ldr x30, [x11, :lo12:__lfisym__lfi_retfn]
