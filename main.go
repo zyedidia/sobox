@@ -125,10 +125,8 @@ func main() {
 
 	if *libname == "" {
 		base := filepath.Base(lib)
-		*libname = strings.TrimSuffix(base, filepath.Ext(base))
+		*libname = strings.TrimSuffix(base, filepath.Ext(base)) + "_box"
 	}
-
-	log.Println("generating bindings with prefix", *libname)
 
 	if *lficc == "" {
 		*lficc = GNUArch(*arch) + "-lfi-linux-musl-clang"
@@ -147,11 +145,12 @@ func main() {
 	if *genLib != "" {
 		objmap["stub"] = *genLib
 	} else {
-		objmap["stub"] = CompileStub(dir, *libname, lib, true /*static*/)
+		inlibname := strings.TrimSuffix(filepath.Base(lib), filepath.Ext(filepath.Base(lib)))
+		objmap["stub"] = CompileStub(dir, inlibname, lib, true /*static*/)
 	}
 
 	if *out == "" {
-		*out = *libname + "-box" + filepath.Ext(lib)
+		*out = *libname + filepath.Ext(lib)
 	}
 
 	WriteFiles(dir, *libname, "embed/lib", exports, exposed, objmap)
