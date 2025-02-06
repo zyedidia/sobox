@@ -1,5 +1,54 @@
 .section ".text.trampolines"
 
+.macro pushx, xmm
+	subq $16, %rsp
+	movdqu xmm, (%rsp)
+.endm
+
+.macro popx, xmm
+	movdqu (%rsp), xmm
+	addq $16, %rsp
+.endm
+
+__lfi_trampoline_slowpath:
+	# slow path
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
+	pushq %r8
+	pushq %r9
+	pushq %r10
+	pushq %r11
+	pushx %xmm0
+	pushx %xmm1
+	pushx %xmm2
+	pushx %xmm3
+	pushx %xmm4
+	pushx %xmm5
+	pushx %xmm6
+	pushx %xmm7
+	callq {{.lib}}_setup
+	popx %xmm0
+	popx %xmm1
+	popx %xmm2
+	popx %xmm3
+	popx %xmm4
+	popx %xmm5
+	popx %xmm6
+	popx %xmm7
+	popq %r11
+	popq %r10
+	popq %r9
+	popq %r8
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi
+	movq lfi_myctx@gottpoff(%rip), %r11
+	movq %fs:(%r11), %r11
+	ret
+
 .global __lfi_trampoline
 __lfi_trampoline:
 	pushq %r15
@@ -13,29 +62,7 @@ __lfi_trampoline:
 
 	cmpq $0, %r11
 	jne 1f
-	# slow path
-	pushq %rdi
-	pushq %rdi # for stack alignment
-	pushq %rsi
-	pushq %rdx
-	pushq %rcx
-	pushq %r8
-	pushq %r9
-	pushq %r10
-	pushq %r11
-	mov %rdi, %r11
-	callq {{.lib}}_setup
-	popq %r11
-	popq %r10
-	popq %r9
-	popq %r8
-	popq %rcx
-	popq %rdx
-	popq %rsi
-	popq %rdi
-	popq %rdi
-	movq lfi_myctx@gottpoff(%rip), %r11
-	movq %fs:(%r11), %r11
+	call __lfi_trampoline_slowpath
 1:
 
 	movq %rsp, 0(%r11) # kstackp

@@ -5,6 +5,36 @@
 #define REG_BASE  x21
 #define REG_SYS_  x25
 
+__lfi_trampoline_slowpath:
+	stp x0, x1, [sp, #-16]!
+	stp x2, x3, [sp, #-16]!
+	stp x4, x5, [sp, #-16]!
+	stp x6, x7, [sp, #-16]!
+	stp x10, xzr, [sp, #-16]!
+	stp q0, q1, [sp, #-32]!
+	stp q2, q3, [sp, #-32]!
+	stp q4, q5, [sp, #-32]!
+	stp q6, q7, [sp, #-32]!
+	bl {{.lib}}_setup
+	stp q6, q7, [sp], 32
+	stp q4, q5, [sp], 32
+	stp q2, q3, [sp], 32
+	stp q0, q1, [sp], 32
+	ldp x10, xzr, [sp], 16
+	ldp x6, x7, [sp], 16
+	ldp x4, x5, [sp], 16
+	ldp x2, x3, [sp], 16
+	ldp x0, x1, [sp], 16
+#ifdef __APPLE__
+	ldr REG_BASE, [REG_SYS, 8*N_RTCALLS+8]
+#else
+	mrs	REG_BASE, tpidr_el0
+	add	REG_BASE, REG_BASE, #:tprel_hi12:lfi_myctx, lsl #12
+	add	REG_BASE, REG_BASE, #:tprel_lo12_nc:lfi_myctx
+	ldr	REG_BASE, [REG_BASE]
+#endif
+	b 1f
+
 __lfi_trampoline:
 	stp d8, d9,   [sp, #-16]!
 	stp d10, d11, [sp, #-16]!
@@ -24,6 +54,10 @@ __lfi_trampoline:
 	add	REG_BASE, REG_BASE, #:tprel_lo12_nc:lfi_myctx
 	ldr	REG_BASE, [REG_BASE]
 #endif
+
+	cbnz REG_BASE, 1f
+	b __lfi_trampoline_slowpath
+1:
 	// save kernel stack
 	mov x11, sp
 	str x11, [REG_BASE]

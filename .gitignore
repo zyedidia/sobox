@@ -4,3 +4,4 @@ todo.txt
 /lfibind
 *.out
 /test/lua/lua
+*.o
