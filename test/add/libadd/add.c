@@ -8,8 +8,15 @@ int add(int a, int b) {
 
 _Thread_local int x;
 
-void print() {
+void* fn(void* arg) {
     printf("thread local x: %d\n", x++);
+    return NULL;
+}
+
+void print() {
+    pthread_t t;
+    pthread_create(&t, NULL, fn, NULL);
+    pthread_join(t, NULL);
 }
 
 __attribute__((constructor)) void init() {

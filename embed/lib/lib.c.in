@@ -145,10 +145,13 @@ void
     install_trampotable((void**) r);
 }
 
+extern void {{ .lib }}__lfi_thread_create(void* fn);
+extern void {{ .lib }}__lfi_pause(void);
+
 void
 {{ .lib }}_setup(void)
 {
-    lfi_thread_init(__lfisym__lfi_thread_create, __lfisym__lfi_pause);
+    lfi_thread_init({{.lib}}__lfi_thread_create, __lfisym__lfi_pause);
 }
 
 void*
