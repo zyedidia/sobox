@@ -2,4 +2,22 @@
 
 .global {{.lib}}_cbtrampoline
 {{.lib}}_cbtrampoline:
-	brk #0
+	mrs x10, tpidr_el0
+	add	x10, x10, #:tprel_hi12:lfi_myctx, lsl #12
+	add	x10, x10, #:tprel_lo12_nc:lfi_myctx
+	ldr	x10, [x10]
+
+	// save user sp
+	mov x12, sp
+	// load kernel sp
+	ldr x11, [x21]
+	mov sp, x11
+	stp x12, x30, [sp, #-16]!
+
+	blr x16
+
+	ldp x11, x30, [sp], 16
+	mov sp, x11
+
+	add x30, x21, w30, uxtw
+	ret

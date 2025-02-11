@@ -53,6 +53,7 @@ func CompileStaticLib(dir, out string) {
 	files := []string{
 		filepath.Join(dir, "embed/lib/includes.c"),
 		filepath.Join(dir, "embed/lib/lib.c"),
+		// filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.c", Arch(*arch))),
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.s", Arch(*arch))),
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/trampolines.S", Arch(*arch))),
 	}
@@ -69,6 +70,7 @@ func CompileDynamicLib(dir, out string) {
 	Run(*cc,
 		filepath.Join(dir, "embed/lib/includes.c"),
 		filepath.Join(dir, "embed/lib/lib.c"),
+		// filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.c", Arch(*arch))),
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.s", Arch(*arch))),
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/trampolines.S", Arch(*arch))),
 		"-llfi", "-O2", "-fPIC", "-shared",
