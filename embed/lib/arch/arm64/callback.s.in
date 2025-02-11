@@ -10,7 +10,7 @@
 	// save user sp
 	mov x12, sp
 	// load kernel sp
-	ldr x11, [x21]
+	ldr x11, [x10]
 	mov sp, x11
 	stp x12, x30, [sp, #-16]!
 
