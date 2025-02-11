@@ -2,6 +2,8 @@
 
 .global {{.lib}}_cbtrampoline
 {{.lib}}_cbtrampoline:
+	// x18 was used to branch here, reset it to a valid value
+	mov x18, x21
 	mrs x10, tpidr_el0
 	add	x10, x10, #:tprel_hi12:lfi_myctx, lsl #12
 	add	x10, x10, #:tprel_lo12_nc:lfi_myctx

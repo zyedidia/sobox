@@ -13,8 +13,6 @@ int fn42(void) {
     return 42;
 }
 
-void add_box_print();
-
 int main() {
     add_box_init();
 
