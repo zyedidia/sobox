@@ -193,4 +193,8 @@ cbfind(void* fn)
     return -1;
 }
 
+#if defined(__x86_64__) || defined(_M_X64)
+#include "arch/x64/callback.c"
+#elif defined(__aarch64__) || defined(_M_ARM64)
 #include "arch/arm64/callback.c"
+#endif

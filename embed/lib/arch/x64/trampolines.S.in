@@ -1,12 +1,12 @@
 .section ".text.trampolines"
 
-.macro pushx, xmm
+.macro pushx xmm
 	subq $16, %rsp
-	movdqu xmm, (%rsp)
+	movdqu \xmm, (%rsp)
 .endm
 
-.macro popx, xmm
-	movdqu (%rsp), xmm
+.macro popx xmm
+	movdqu (%rsp), \xmm
 	addq $16, %rsp
 .endm
 

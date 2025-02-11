@@ -1,6 +1,8 @@
 #include <stddef.h>
 
-#include "sobox.h"
+void add_box_init(void);
+
+void* add_box_register_cb(void*, size_t);
 
 int add(int, int);
 
@@ -11,12 +13,12 @@ int fn42(void) {
     return 42;
 }
 
+void add_box_print();
+
 int main() {
-#ifdef SOBOX
-    void* s_fn42 = sbx_register_cb(&fn42, 0);
-#else
-    void* s_fn42 = &fn42;
-#endif
+    add_box_init();
+
+    void* s_fn42 = add_box_register_cb(&fn42, 0);
 
     display(s_fn42);
 
