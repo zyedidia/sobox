@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include "lualib.h"
 #include "lauxlib.h"
@@ -29,7 +31,8 @@ void selua_setglobal(lua_State* L, char* s) {
 }
 
 int foo(lua_State* L) {
-    printf("foo\n");
+    lua_Number arg = lua_tonumber(L, -1);
+    printf("foo: %d\n", (int) arg);
     return 0;
 }
 
@@ -39,12 +42,17 @@ int main() {
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
 
-    seluaL_dostring(L, "print('hello world')");
-
     void* sbx_foo = luabox_register_cb(&foo, 0);
     lua_pushcfunction(L, sbx_foo);
     selua_setglobal(L, "foo");
-    seluaL_dostring(L, "foo()");
+
+    char* line;
+    while ((line = readline("luabox> ")) != NULL) {
+        add_history(line);
+        if (seluaL_dostring(L, line) != 0)
+            fprintf(stderr, "error during evaluation");
+        free(line);
+    }
 
     lua_close(L);
 

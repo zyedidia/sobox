@@ -47,12 +47,12 @@ __lfi_trampoline:
 	add	REG_BASE, REG_BASE, #:tprel_lo12_nc:lfi_myctx
 	ldr	REG_BASE, [REG_BASE]
 
-	cbnz REG_BASE, 1f
-	b __lfi_trampoline_slowpath
+	cbz REG_BASE, __lfi_trampoline_slowpath
 1:
 	ldr x12, [REG_BASE, PROC_REGS+16*15+8]
 	// save user sp to stack
-	stp x12, xzr, [sp, #-16]!
+	ldr x13, [REG_BASE]
+	stp x12, x13, [sp, #-16]!
 	// save kernel stack
 	mov x11, sp
 	str x11, [REG_BASE]

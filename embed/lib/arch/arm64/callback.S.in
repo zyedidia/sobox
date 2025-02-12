@@ -1,0 +1,42 @@
+#define PROC_REGS 16
+
+.text
+
+.global {{.lib}}_cbtrampoline
+{{.lib}}_cbtrampoline:
+	// x18 was used to branch here, reset it to a valid value
+	mov x18, x21
+
+	mrs x10, tpidr_el0
+	add	x10, x10, #:tprel_hi12:lfi_myctx, lsl #12
+	add	x10, x10, #:tprel_lo12_nc:lfi_myctx
+	ldr	x10, [x10]
+
+	// get current user sp
+	mov x12, sp
+	// enable kernel sp
+	ldr x11, [x10]
+	mov sp, x11
+	// save previous user sp and return address to stack
+	ldr x11, [x10, PROC_REGS+16*15+8]
+	stp x11, x30, [sp, #-16]!
+	// save current user sp to ctx
+	str x12, [x10, PROC_REGS+16*15+8]
+	str x21, [sp, #-16]!
+	mov x21, x10
+
+	blr x16
+
+	// read previous user sp and return address from stack
+	mov x10, x21
+	ldr x21, [sp], 16
+	ldp x11, x30, [sp], 16
+	// read current user sp from ctx
+	ldr x12, [x10, PROC_REGS+16*15+8]
+	// restore previous user sp in ctx
+	str x11, [x10, PROC_REGS+16*15+8]
+	// restore sp to current user sp
+	mov sp, x12
+
+	add x30, x21, w30, uxtw
+	ret

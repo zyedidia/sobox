@@ -54,7 +54,7 @@ func CompileStaticLib(dir, out string) {
 		filepath.Join(dir, "embed/lib/includes.c"),
 		filepath.Join(dir, "embed/lib/lib.c"),
 		// filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.c", Arch(*arch))),
-		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.s", Arch(*arch))),
+		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.S", Arch(*arch))),
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/trampolines.S", Arch(*arch))),
 	}
 	var objs []string
@@ -71,7 +71,7 @@ func CompileDynamicLib(dir, out string) {
 		filepath.Join(dir, "embed/lib/includes.c"),
 		filepath.Join(dir, "embed/lib/lib.c"),
 		// filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.c", Arch(*arch))),
-		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.s", Arch(*arch))),
+		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.S", Arch(*arch))),
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/trampolines.S", Arch(*arch))),
 		"-llfi", "-O2", "-fPIC", "-shared",
 		"-o", out,
