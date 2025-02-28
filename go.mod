@@ -1,4 +1,4 @@
-module github.com/zyedidia/lfibind
+module github.com/zyedidia/lfi-bind
 
 go 1.22.0
 
