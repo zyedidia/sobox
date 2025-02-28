@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"debug/elf"
+	"encoding/binary"
+	"fmt"
 	"io"
 	"os"
 
@@ -72,6 +74,27 @@ func StaticGetExports(staticlib *os.File, es map[string]bool) []string {
 			continue
 		}
 		exports = append(exports, ObjGetExports(ef, es)...)
+		// ObjGetStackArgs(ef, es)
 	}
 	return exports
+}
+
+type StackArg struct {
+	Offset uint64
+	Size   uint64
+}
+
+func ObjGetStackArgs(file *elf.File, es map[string]bool) map[string][]StackArg {
+	sec := file.Section(".stack_args")
+	if sec == nil {
+		return nil
+	}
+	entries := sec.Size / 8
+	b := make([]byte, 8)
+	for i := 0; i < int(entries); i++ {
+		sec.ReadAt(b, int64(i*8))
+		val := binary.LittleEndian.Uint64(b)
+		fmt.Println(file, val)
+	}
+	return nil
 }

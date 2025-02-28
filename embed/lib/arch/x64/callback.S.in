@@ -6,13 +6,24 @@
 	movq lfi_myctx@gottpoff(%rip), %r11
 	movq %fs:(%r11), %r11
 	xchg 0(%r11), %rsp
+	pushq %r12              // save r12 to use as temp
+	movq 0(%r11), %r12      // move current sandbox stack pointer to r12
+	pushq 16(%r11)          // push old sandbox stack pointer to stack
+	movq %r12, 16(%r11)     // save current sandbox stack pointer
 
+	pushq %rdi // align stack
 	callq *%r10
+	popq %rdi
 
 	// restore %rsp
 	movq lfi_myctx@gottpoff(%rip), %r11
 	movq %fs:(%r11), %r11
-	xchg 0(%r11), %rsp
+
+	movq 16(%r11), %r10      // move current sandbox stack pointer to r10
+	popq 16(%r11)            // restore old sandbox stack pointer
+	popq %r12                // restore r12
+	movq %rsp, 0(%r11)       // make sure we don't clobber stack pointer
+	movq %r10, %rsp          // restore stack pointer
 
 	// return back to sandbox
 

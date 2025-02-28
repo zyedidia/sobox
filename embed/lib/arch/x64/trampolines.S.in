@@ -65,6 +65,8 @@ __lfi_trampoline:
 	call __lfi_trampoline_slowpath
 1:
 
+    pushq %rbp     // dummy push to keep stack properly aligned
+    pushq 16(%r11) // push user stack value
 	movq %rsp, 0(%r11) # kstackp
 	movq 16(%r11), %rsp # stack pointer
 	movq 16+14*8(%r11), %r14 # base pointer

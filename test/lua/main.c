@@ -7,27 +7,27 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
-void* luabox_malloc(size_t n);
-void luabox_free(void* p);
+void* lua_box_malloc(size_t n);
+void lua_box_free(void* p);
 
-void luabox_init(void);
-void* luabox_register_cb(void*, size_t);
+void lua_box_init(void);
+void* lua_box_register_cb(void*, size_t);
 
 int seluaL_dostring(lua_State* L, char* s) {
     size_t len = strlen(s);
-    char* sbx_s = luabox_malloc(len);
+    char* sbx_s = lua_box_malloc(len);
     memcpy(sbx_s, s, len);
     int ok = luaL_dostring(L, sbx_s);
-    luabox_free(sbx_s);
+    lua_box_free(sbx_s);
     return ok;
 }
 
 void selua_setglobal(lua_State* L, char* s) {
     size_t len = strlen(s);
-    char* sbx_s = luabox_malloc(len);
+    char* sbx_s = lua_box_malloc(len);
     memcpy(sbx_s, s, len);
     lua_setglobal(L, sbx_s);
-    luabox_free(sbx_s);
+    lua_box_free(sbx_s);
 }
 
 int foo(lua_State* L) {
@@ -37,17 +37,17 @@ int foo(lua_State* L) {
 }
 
 int main() {
-    luabox_init();
+    lua_box_init();
 
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
 
-    void* sbx_foo = luabox_register_cb(&foo, 0);
+    void* sbx_foo = lua_box_register_cb(&foo, 0);
     lua_pushcfunction(L, sbx_foo);
     selua_setglobal(L, "foo");
 
     char* line;
-    while ((line = readline("luabox> ")) != NULL) {
+    while ((line = readline("lua_box> ")) != NULL) {
         add_history(line);
         if (seluaL_dostring(L, line) != 0)
             fprintf(stderr, "error during evaluation");
