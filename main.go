@@ -155,5 +155,9 @@ func main() {
 
 	WriteFiles(dir, *libname, "embed/lib", exports, exposed, objmap)
 
-	CompileStaticLib(dir, *out)
+	if filepath.Ext(lib) == ".so" {
+		CompileDynamicLib(dir, *out)
+	} else {
+		CompileStaticLib(dir, *out)
+	}
 }
