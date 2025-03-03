@@ -167,6 +167,14 @@ size_t
     assert(!"unimplemented");
 }
 
+extern struct LFIContext* lfi_myctx;
+
+struct LFIContext*
+{{ .lib }}_ctx(void)
+{
+    return lfi_myctx;
+}
+
 #define MAXCALLBACKS 4096
 
 static void* callbacks[MAXCALLBACKS];
