@@ -167,7 +167,7 @@ size_t
     assert(!"unimplemented");
 }
 
-extern struct LFIContext* lfi_myctx;
+extern _Thread_local struct LFIContext* lfi_myctx;
 
 struct LFIContext*
 {{ .lib }}_ctx(void)
