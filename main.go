@@ -142,11 +142,16 @@ func main() {
 		os.Exit(0)
 	}
 
+	static := true
+	if filepath.Ext(lib) == ".so" {
+		static = false
+	}
+
 	if *genLib != "" {
 		objmap["stub"] = *genLib
 	} else {
 		inlibname := strings.TrimSuffix(filepath.Base(lib), filepath.Ext(filepath.Base(lib)))
-		objmap["stub"] = CompileStub(dir, inlibname, lib, true /*static*/)
+		objmap["stub"] = CompileStub(dir, inlibname, lib, static)
 	}
 
 	if *out == "" {
@@ -155,9 +160,9 @@ func main() {
 
 	WriteFiles(dir, *libname, "embed/lib", exports, exposed, objmap)
 
-	if filepath.Ext(lib) == ".so" {
-		CompileDynamicLib(dir, *out)
-	} else {
+	if static {
 		CompileStaticLib(dir, *out)
+	} else {
+		CompileDynamicLib(dir, *out)
 	}
 }
