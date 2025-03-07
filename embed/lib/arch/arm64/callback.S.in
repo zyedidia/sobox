@@ -2,39 +2,51 @@
 
 .text
 
+.macro get_ctx
+#ifndef NODLOPEN
+	adrp x8, :got:lfi
+	ldr	x8, [x8, :got_lo12:lfi]
+	ldr	x8, [x8] // x8 now points to struct LFI
+	ldr x8, [x8] // x8 now points to lfi_ctx callback
+	mov x9, x30
+	blr x8       // return value is placed in x8
+	mov x30, x9
+#else
+	mrs	x8, tpidr_el0
+	add	x8, x8, #:tprel_hi12:lfi_myctx, lsl #12
+	add	x8, x8, #:tprel_lo12_nc:lfi_myctx
+	ldr	x8, [x8]
+#endif
+.endm
+
 .global {{.lib}}_cbtrampoline
 {{.lib}}_cbtrampoline:
 	// x18 was used to branch here, reset it to a valid value
 	mov x18, x21
 
-	mrs x10, tpidr_el0
-	add	x10, x10, #:tprel_hi12:lfi_myctx, lsl #12
-	add	x10, x10, #:tprel_lo12_nc:lfi_myctx
-	ldr	x10, [x10]
+	get_ctx
 
 	// get current user sp
 	mov x12, sp
 	// enable kernel sp
-	ldr x11, [x10]
+	ldr x11, [x8]
 	mov sp, x11
 	// save previous user sp and return address to stack
-	ldr x11, [x10, PROC_REGS+16*15+8]
+	ldr x11, [x8, PROC_REGS+16*15+8]
 	stp x11, x30, [sp, #-16]!
 	// save current user sp to ctx
-	str x12, [x10, PROC_REGS+16*15+8]
-	str x21, [sp, #-16]!
-	mov x21, x10
+	str x12, [x8, PROC_REGS+16*15+8]
+	mov x22, x8
 
 	blr x16
 
 	// read previous user sp and return address from stack
-	mov x10, x21
-	ldr x21, [sp], 16
+	mov x8, x22
 	ldp x11, x30, [sp], 16
 	// read current user sp from ctx
-	ldr x12, [x10, PROC_REGS+16*15+8]
+	ldr x12, [x8, PROC_REGS+16*15+8]
 	// restore previous user sp in ctx
-	str x11, [x10, PROC_REGS+16*15+8]
+	str x11, [x8, PROC_REGS+16*15+8]
 	// restore sp to current user sp
 	mov sp, x12
 

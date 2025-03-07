@@ -60,6 +60,8 @@ install_trampotable(void** table)
     }
 }
 
+struct LFILibCalls* lfi;
+
 static struct HostFile*
 fsopen(const char* filename, int flags, int mode)
 {
@@ -74,7 +76,8 @@ fsopen(const char* filename, int flags, int mode)
         if (write(fd, data->start, data->end - data->start) < 0)
             goto err;
         lseek(fd, 0, SEEK_SET);
-        return lfi_host_fdopen(fd);
+        assert(lfi);
+        return lfi->lfi_host_fdopen(fd);
 err:
         close(fd);
         return NULL;
@@ -82,18 +85,19 @@ err:
     return NULL;
 }
 
-static struct Tux* tux;
-
 void
-{{ .lib }}_init(void)
+{{ .lib }}_init(struct LFILibCalls* lfi_)
 {
-    struct LFIPlatform* plat = lfi_new_plat(getpagesize());
+    assert(lfi_);
+    lfi = lfi_;
+
+    struct LFIPlatform* plat = lfi->lfi_new_plat(getpagesize());
     if (!plat) {
-        fprintf(stderr, "sobox: error loading LFI: %s\n", lfi_strerror());
+        fprintf(stderr, "sobox: error loading LFI: %s\n", lfi->lfi_strerror());
         exit(1);
     }
 
-    tux = lfi_tux_new(plat, (struct TuxOptions) {
+    struct Tux* tux = lfi->lfi_tux_new(plat, (struct TuxOptions) {
         .pagesize = getpagesize(),
         .stacksize = 2 * 1024 * 1024,
         .pause_on_exit = true,
@@ -103,7 +107,7 @@ void
     });
 
     if (!tux) {
-        fprintf(stderr, "sobox: error loading LFI: %s\n", lfi_strerror());
+        fprintf(stderr, "sobox: error loading LFI: %s\n", lfi->lfi_strerror());
         exit(1);
     }
 
@@ -114,27 +118,27 @@ void
     }
 
     char* args[] = {"stub", NULL};
-    struct TuxThread* p = lfi_tux_proc_new(tux, stub->start, stub->end - stub->start, 1, &args[0]);
+    struct TuxThread* p = lfi->lfi_tux_proc_new(tux, stub->start, stub->end - stub->start, 1, &args[0]);
     if (!p) {
-        fprintf(stderr, "sobox: error creating LFI process: %s\n", lfi_strerror());
+        fprintf(stderr, "sobox: error creating LFI process: %s\n", lfi->lfi_strerror());
         exit(1);
     }
 
-    bool ok = cbinit(lfi_tux_ctx(p));
+    bool ok = cbinit(lfi->lfi_tux_ctx(p));
     if (!ok) {
         fprintf(stderr, "sobox: failed to initialize callback entries\n");
         exit(1);
     }
 
-    lfi_tux_soboxinit(tux, true);
+    lfi->lfi_tux_soboxinit(tux, true);
 
-    uint64_t r = lfi_tux_proc_run(p);
+    uint64_t r = lfi->lfi_tux_proc_run(p);
     if (r < 256) {
         fprintf(stderr, "sobox: failed to start LFI process\n");
         exit(1);
     }
 
-    lfi_tux_soboxinit(tux, false);
+    lfi->lfi_tux_soboxinit(tux, false);
 
     // TODO: validate the trampoline table (its location) before installing it,
     // since intalling it involves reading from sandbox memory. Possibly also
@@ -150,7 +154,7 @@ extern void {{ .lib }}__lfi_pause(void);
 void
 {{ .lib }}_setup(void)
 {
-    lfi_thread_init({{.lib}}__lfi_thread_create, __lfisym__lfi_pause);
+    lfi->lfi_thread_init({{.lib}}__lfi_thread_create, __lfisym__lfi_pause);
 }
 
 void*
@@ -165,14 +169,6 @@ size_t
 {
     (void) n;
     assert(!"unimplemented");
-}
-
-extern _Thread_local struct LFIContext* lfi_myctx;
-
-struct LFIContext*
-{{ .lib }}_ctx(void)
-{
-    return lfi_myctx;
 }
 
 #define MAXCALLBACKS 4096

@@ -1,24 +1,36 @@
 .text
 
+.macro get_ctx
+#ifndef NODLOPEN
+	movq lfi@GOTPCREL(%rip), %rax
+	movq (%rax), %rax // %rax now points to struct LFI
+	movq (%rax), %rax // %rax now points to lfi_ctx_fn
+	leaq 1f(%rip), %r11
+	jmpq *%rax
+1:
+	// context pointer is now in %rax
+	movq %rax, %r11
+#else
+	movq lfi_myctx@gottpoff(%rip), %r11
+	movq %fs:(%r11), %r11
+#endif
+.endm
+
 .global {{.lib}}_cbtrampoline
 {{.lib}}_cbtrampoline:
 	// Entrypoint for callbacks. Callback target is in %r10.
-	movq lfi_myctx@gottpoff(%rip), %r11
-	movq %fs:(%r11), %r11
+	get_ctx
 	xchg 0(%r11), %rsp
 	pushq %r12              // save r12 to use as temp
 	movq 0(%r11), %r12      // move current sandbox stack pointer to r12
 	pushq 16(%r11)          // push old sandbox stack pointer to stack
 	movq %r12, 16(%r11)     // save current sandbox stack pointer
 
-	pushq %rdi // align stack
+	pushq %r11 // needed for stack alignment (and preserving r11)
 	callq *%r10
-	popq %rdi
+	popq %r11
 
 	// restore %rsp
-	movq lfi_myctx@gottpoff(%rip), %r11
-	movq %fs:(%r11), %r11
-
 	movq 16(%r11), %r10      // move current sandbox stack pointer to r10
 	popq 16(%r11)            // restore old sandbox stack pointer
 	popq %r12                // restore r12

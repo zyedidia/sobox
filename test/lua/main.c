@@ -10,7 +10,8 @@
 void* lua_box_malloc(size_t n);
 void lua_box_free(void* p);
 
-void lua_box_init(void);
+void* lfi_libcalls(void);
+void lua_box_init(void*);
 void* lua_box_register_cb(void*, size_t);
 
 int seluaL_dostring(lua_State* L, char* s) {
@@ -37,7 +38,7 @@ int foo(lua_State* L) {
 }
 
 int main() {
-    lua_box_init();
+    lua_box_init(lfi_libcalls());
 
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);

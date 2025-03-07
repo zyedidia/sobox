@@ -10,6 +10,33 @@
 	addq $16, %rsp
 .endm
 
+.macro get_ctx
+#ifndef NODLOPEN
+    movq lfi@GOTPCREL(%rip), %rax
+    movq (%rax), %rax // %rax now points to struct LFI
+    movq (%rax), %rax // %rax now points to lfi_ctx_fn
+    leaq 1f(%rip), %r11
+    jmpq *%rax
+1:
+    // context pointer is now in %rax
+    movq %rax, %r11
+#else
+    movq lfi_myctx@gottpoff(%rip), %r11
+    movq %fs:(%r11), %r11
+#endif
+.endm
+
+.globl lfi_ctx
+lfi_ctx:
+    movq lfi@GOTPCREL(%rip), %rax
+    movq (%rax), %rax // %rax now points to struct LFI
+    movq (%rax), %rax // %rax now points to lfi_ctx_fn
+    leaq 1f(%rip), %r11
+    jmpq *%rax
+1:
+    // context pointer is now in %rax
+    ret
+
 __lfi_trampoline_slowpath:
 	# slow path
 	pushq %rdi
@@ -45,8 +72,7 @@ __lfi_trampoline_slowpath:
 	popq %rdx
 	popq %rsi
 	popq %rdi
-	movq lfi_myctx@gottpoff(%rip), %r11
-	movq %fs:(%r11), %r11
+    get_ctx
 	ret
 
 .global __lfi_trampoline
@@ -57,8 +83,7 @@ __lfi_trampoline:
 	pushq %r12
 	pushq %rbx
 	pushq %rbp
-	movq lfi_myctx@gottpoff(%rip), %r11
-	movq %fs:(%r11), %r11
+    get_ctx
 
 	cmpq $0, %r11
 	jne 1f
