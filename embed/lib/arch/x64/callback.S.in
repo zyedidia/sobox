@@ -46,3 +46,5 @@ userpop:
 	andl $0xffffffe0, %r11d
 	orq %r14, %r11
 	jmpq *%r11
+
+.section .note.GNU-stack,"",@progbits

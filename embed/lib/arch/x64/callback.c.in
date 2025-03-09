@@ -33,10 +33,10 @@ cbinit(struct LFIContext* ctx)
     for (size_t i = 0; i < MAXCALLBACKS; i++) {
         memcpy(&cbentries_alias[i].code, &cbtrampoline[0], sizeof(cbentries_alias[i].code));
     }
-    struct HostFile* hf = lfi_host_fdopen(fd);
+    struct HostFile* hf = lfi->lfi_host_fdopen(fd);
     assert(hf);
     // Share the mapping inside the sandbox as read/exec.
-    lfiptr_t boxmap = lfi_as_mapany(lfi_ctx_as(ctx), size, PROT_READ | PROT_EXEC, MAP_SHARED, hf, 0);
+    lfiptr_t boxmap = lfi->lfi_as_mapany(lfi->lfi_ctx_as(ctx), size, PROT_READ | PROT_EXEC, MAP_SHARED, hf, 0);
     if (boxmap == (lfiptr_t) -1)
         goto err1;
     cbentries_box = (struct CallbackEntry*) boxmap;

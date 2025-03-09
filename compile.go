@@ -36,6 +36,7 @@ func CompileStub(dir, lib, libpath string, static bool) string {
 		"-L" + filepath.Dir(libpath),
 		"-l" + LibName(lib),
 		"-O2",
+		"-lc++", "-lc++abi",
 	}
 
 	if static {
@@ -73,7 +74,7 @@ func CompileDynamicLib(dir, out string) {
 		// filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.c", Arch(*arch))),
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.S", Arch(*arch))),
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/trampolines.S", Arch(*arch))),
-		"-llfi", "-O2", "-fPIC", "-shared",
+		"-O2", "-fPIC", "-shared",
 		"-o", out,
 	)
 }

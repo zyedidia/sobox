@@ -28,6 +28,7 @@ var arch = flag.String("arch", "", "target architecture (x64, arm64)")
 var showExports = flag.Bool("show-exports", false, "show exported symbols and exit")
 var genStub = flag.Bool("gen-stub", false, "only generate files needed for the stub (but do not compile)")
 var genLib = flag.String("gen-lib", "", "only generate files needed for lib (but do not compile); must provide the stub.elf as input")
+var dyn = flag.Bool("dyn", false, "generate dynamic library")
 
 func fatal(v ...interface{}) {
 	fmt.Fprintln(os.Stderr, v...)
@@ -160,7 +161,7 @@ func main() {
 
 	WriteFiles(dir, *libname, "embed/lib", exports, exposed, objmap)
 
-	if static {
+	if static && !*dyn {
 		CompileStaticLib(dir, *out)
 	} else {
 		CompileDynamicLib(dir, *out)

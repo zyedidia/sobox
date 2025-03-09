@@ -91,7 +91,10 @@ void
     assert(lfi_);
     lfi = lfi_;
 
-    struct LFIPlatform* plat = lfi->lfi_new_plat(getpagesize());
+    struct LFIPlatform* plat = lfi->lfi_new_plat((struct LFIPlatOptions) {
+        .pagesize = getpagesize(),
+        .vmsize = 4UL * 1024 * 1024 * 1024,
+    });
     if (!plat) {
         fprintf(stderr, "sobox: error loading LFI: %s\n", lfi->lfi_strerror());
         exit(1);
@@ -104,6 +107,7 @@ void
         .fs = (struct TuxFS) {
             .open = fsopen,
         },
+        .verbose = true,
     });
 
     if (!tux) {
@@ -130,7 +134,7 @@ void
         exit(1);
     }
 
-    lfi->lfi_tux_soboxinit(tux, true);
+    lfi->lfi_tux_libinit(tux, true);
 
     uint64_t r = lfi->lfi_tux_proc_run(p);
     if (r < 256) {
@@ -138,7 +142,7 @@ void
         exit(1);
     }
 
-    lfi->lfi_tux_soboxinit(tux, false);
+    lfi->lfi_tux_libinit(tux, false);
 
     // TODO: validate the trampoline table (its location) before installing it,
     // since intalling it involves reading from sandbox memory. Possibly also
