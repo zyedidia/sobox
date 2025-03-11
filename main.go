@@ -29,6 +29,9 @@ var showExports = flag.Bool("show-exports", false, "show exported symbols and ex
 var genStub = flag.Bool("gen-stub", false, "only generate files needed for the stub (but do not compile)")
 var genLib = flag.String("gen-lib", "", "only generate files needed for lib (but do not compile); must provide the stub.elf as input")
 var dyn = flag.Bool("dyn", false, "generate dynamic library")
+var nodl = flag.Bool("no-dlopen", false, "do not support dlopen")
+var single = flag.Bool("single-box", false, "enable single-sandbox optimizations")
+var large = flag.Bool("large-box", false, "enable large (non-4GiB) sandboxes")
 
 func fatal(v ...interface{}) {
 	fmt.Fprintln(os.Stderr, v...)

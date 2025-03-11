@@ -64,11 +64,20 @@ func CompileStaticLib(dir, out string) {
 		objs = append(objs, f+".o")
 	}
 	args := []string{"rcs", out}
+	if *nodl {
+		args = append(args, "-DNODLOPEN")
+	}
+	if *single {
+		args = append(args, "-DSINGLEBOX")
+	}
+	if *large {
+		args = append(args, "-DLARGEBOX")
+	}
 	Run("ar", append(args, objs...)...)
 }
 
 func CompileDynamicLib(dir, out string) {
-	Run(*cc,
+	args := []string{
 		filepath.Join(dir, "embed/lib/includes.c"),
 		filepath.Join(dir, "embed/lib/lib.c"),
 		// filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.c", Arch(*arch))),
@@ -76,5 +85,15 @@ func CompileDynamicLib(dir, out string) {
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/trampolines.S", Arch(*arch))),
 		"-O2", "-fPIC", "-shared",
 		"-o", out,
-	)
+	}
+	if *nodl {
+		args = append(args, "-DNODLOPEN")
+	}
+	if *single {
+		args = append(args, "-DSINGLEBOX")
+	}
+	if *large {
+		args = append(args, "-DLARGEBOX")
+	}
+	Run(*cc, args...)
 }

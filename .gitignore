@@ -5,3 +5,4 @@ todo.txt
 *.out
 /test/lua/lua
 *.o
+/lfi-bind

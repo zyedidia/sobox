@@ -95,7 +95,12 @@ __lfi_trampoline:
 	movq %rsp, 0(%r11) # kstackp
 	movq 16(%r11), %rsp # stack pointer
 	movq 16+14*8(%r11), %r14 # base pointer
+#ifndef SINGLEBOX
     wrgsbase %r14  // TODO: maybe we can get away with skipping this
+#endif
+#ifdef LARGEBOX
+    movq 16+13*8(%r11), %r13
+#endif
 	mov __lfisym__lfi_retfn@GOTPCREL(%rip), %r11
 	mov (%r11), %r11
 	andq $0xfffffffffffffff0, %rsp
