@@ -42,6 +42,9 @@ func CompileStub(dir, lib, libpath string, static bool) string {
 	if static {
 		args = append(args, "-static-pie")
 	}
+	if *mimalloc {
+		args = append(args, "-lmimalloc")
+	}
 
 	Run(*lficc, args...)
 	if !static {

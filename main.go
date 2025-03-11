@@ -32,6 +32,7 @@ var dyn = flag.Bool("dyn", false, "generate dynamic library")
 var nodl = flag.Bool("no-dlopen", false, "do not support dlopen")
 var single = flag.Bool("single-box", false, "enable single-sandbox optimizations")
 var large = flag.Bool("large-box", false, "enable large (non-4GiB) sandboxes")
+var mimalloc = flag.Bool("mimalloc", false, "use mimalloc as the system allocator")
 
 func fatal(v ...interface{}) {
 	fmt.Fprintln(os.Stderr, v...)
