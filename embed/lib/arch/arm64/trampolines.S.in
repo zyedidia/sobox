@@ -57,6 +57,43 @@ __lfi_trampoline_slowpath:
 	get_ctx
 	b 1f
 
+__lfi_trampoline_stack:
+	stp d8, d9,   [sp, #-16]!
+	stp d10, d11, [sp, #-16]!
+	stp d12, d13, [sp, #-16]!
+	stp d14, d15, [sp, #-16]!
+	stp x19, x20, [sp, #-16]!
+	stp x21, x22, [sp, #-16]!
+	stp x23, x24, [sp, #-16]!
+	stp x25, x26, [sp, #-16]!
+	stp x27, x28, [sp, #-16]!
+	stp x29, x30, [sp, #-16]!
+	get_ctx // puts lfi_myctx in x8
+
+	cbz x8, __lfi_trampoline_slowpath
+1:
+	ldr x12, [x8, PROC_REGS+16*15+8]
+	// save user sp to stack
+	ldr x13, [x8]
+	stp x12, x13, [sp, #-16]!
+	// save kernel stack
+	mov x11, sp
+	str x11, [x8]
+	// set user stack
+	mov sp, x12
+	// set return address to __lfisym__lfi_retfn
+	adrp x11, __lfisym__lfi_retfn
+	ldr x30, [x11, :lo12:__lfisym__lfi_retfn]
+	// set base pointer
+	ldr REG_BASE, [x8, PROC_REGS+8*21]
+	// set address pointer to a valid value
+	mov x18, REG_BASE
+	mov x8, #0
+.entry_stack:
+	add x10, REG_BASE, w10, uxtw
+	br x10
+	brk #0
+
 __lfi_trampoline:
 	stp d8, d9,   [sp, #-16]!
 	stp d10, d11, [sp, #-16]!
@@ -102,7 +139,11 @@ __lfi_trampolines:
 {{$sym}}:
 	adrp x10, __lfisym_{{$sym}}
 	ldr x10, [x10, :lo12:__lfisym_{{$sym}}]
+	{{if (has_stack_args $sym)}}
+	b __lfi_trampoline_stack
+	{{else}}
 	b __lfi_trampoline
+	{{end}}
 {{- end}}
 
 {{- range $sym := .exposed}}
@@ -111,7 +152,11 @@ __lfi_trampolines:
 {{$.lib}}_{{$sym}}:
 	adrp x10, __lfisym_{{$sym}}
 	ldr x10, [x10, :lo12:__lfisym_{{$sym}}]
+	{{if (has_stack_args $sym)}}
+	b __lfi_trampoline_stack
+	{{else}}
 	b __lfi_trampoline
+	{{end}}
 {{- end}}
 
 .section ".data.trampolines"

@@ -111,11 +111,13 @@ func main() {
 		}
 	}
 
+	var stackargs map[string][]StackArg
+
 	var exports []string
 	if strings.HasSuffix(lib, ".a") {
-		exports = StaticGetExports(f, exportSet)
+		exports, stackargs = StaticGetExports(f, exportSet)
 	} else if strings.HasSuffix(lib, ".so") {
-		exports = DynamicGetExports(f, exportSet)
+		exports, stackargs = DynamicGetExports(f, exportSet)
 	} else {
 		fatal("expected *.a or *.so file, got", lib)
 	}
@@ -141,7 +143,7 @@ func main() {
 		exposed = append(exposed, strings.Split(*exposeFlag, ",")...)
 	}
 
-	dir := WriteFiles(*dir, *libname, "embed/stub", exports, exposed, objmap)
+	dir := WriteFiles(*dir, *libname, "embed/stub", exports, exposed, objmap, stackargs)
 
 	if *genStub {
 		os.Exit(0)
@@ -163,7 +165,7 @@ func main() {
 		*out = *libname + filepath.Ext(lib)
 	}
 
-	WriteFiles(dir, *libname, "embed/lib", exports, exposed, objmap)
+	WriteFiles(dir, *libname, "embed/lib", exports, exposed, objmap, stackargs)
 
 	if static && !*dyn {
 		CompileStaticLib(dir, *out)

@@ -75,6 +75,42 @@ __lfi_trampoline_slowpath:
     get_ctx
 	ret
 
+.global __lfi_trampoline_stack
+__lfi_trampoline_stack:
+    pushq %r15
+    pushq %r14
+    pushq %r13
+    pushq %r12
+    pushq %rbx
+    pushq %rbp
+    get_ctx
+
+    cmpq $0, %r11
+    jne 1f
+    call __lfi_trampoline_slowpath
+1:
+
+    pushq %rbp     // dummy push to keep stack properly aligned
+    pushq 16(%r11) // push user stack value
+    movq %rsp, 0(%r11) # kstackp
+    movq 16(%r11), %rsp # stack pointer
+    movq 16+14*8(%r11), %r14 # base pointer
+#ifndef SINGLEBOX
+    wrgsbase %r14  // TODO: maybe we can get away with skipping this
+#endif
+#ifdef LARGEBOX
+    movq 16+15*8(%r11), %r15
+#endif
+    mov __lfisym__lfi_retfn@GOTPCREL(%rip), %r11
+    mov (%r11), %r11
+    andq $0xfffffffffffffff0, %rsp
+    pushq %r11
+    xor %r11d, %r11d
+    # TODO: make sure r10 is bundle-aligned and within the sandbox
+.entry_stack:
+    jmpq *%r10
+    int3
+
 .global __lfi_trampoline
 __lfi_trampoline:
 	pushq %r15
@@ -119,7 +155,11 @@ __lfi_trampolines:
 {{$sym}}:
 	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
 	movq (%r10), %r10
-	jmp __lfi_trampoline
+    {{if (has_stack_args $sym)}}
+	jmp __lfi_trampoline_stack
+    {{else}}
+    jmp __lfi_trampoline
+    {{end}}
 {{- end}}
 
 {{- range $sym := .exposed}}
@@ -128,7 +168,11 @@ __lfi_trampolines:
 {{$.lib}}_{{$sym}}:
 	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
 	movq (%r10), %r10
-	jmp __lfi_trampoline
+    {{if (has_stack_args $sym)}}
+    jmp __lfi_trampoline_stack
+    {{else}}
+    jmp __lfi_trampoline
+    {{end}}
 {{- end}}
 
 .section ".data.trampolines"
