@@ -153,6 +153,10 @@ __lfi_trampolines:
 .p2align 4
 .global {{$sym}}
 {{$sym}}:
+	movq jni_env@GOTPCREL(%rip), %r10
+	movq %rdi, (%r10)
+	movq jni_proxy@GOTPCREL(%rip), %r10
+	movq (%r10), %rdi
 	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
 	movq (%r10), %r10
     {{if (has_stack_args $sym)}}

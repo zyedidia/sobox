@@ -83,9 +83,10 @@ func CompileDynamicLib(dir, out string) {
 	args := []string{
 		filepath.Join(dir, "embed/lib/includes.c"),
 		filepath.Join(dir, "embed/lib/lib.c"),
-		// filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.c", Arch(*arch))),
+		filepath.Join(dir, "embed/lib/jni.c"),
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/callback.S", Arch(*arch))),
 		filepath.Join(dir, fmt.Sprintf("embed/lib/arch/%s/trampolines.S", Arch(*arch))),
+		"-I", filepath.Join(dir, "embed/lib"),
 		"-O2", "-fPIC", "-shared",
 		"-o", out,
 	}

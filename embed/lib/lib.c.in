@@ -150,6 +150,9 @@ void
     // uses a safe bundle-aligned jump for entry, but probably still a good
     // idea).
     install_trampotable((void**) r);
+
+    extern void lfi_jni_init();
+    lfi_jni_init();
 }
 
 extern void {{ .lib }}__lfi_thread_create(void* fn);
