@@ -320,7 +320,14 @@ jni_GetIntArrayElements(void* e, jintArray array, jboolean* isCopy)
     jint* native_array = (*jni_env)->GetIntArrayElements(jni_env, array, isCopy);
     assert(native_array);
     memcpy(sandbox_array, native_array, len * sizeof(jint));
+    (*jni_env)->ReleaseIntArrayElements(jni_env, array, native_array, 0);
     return sandbox_array;
+}
+
+static void
+jni_ReleaseIntArrayElements(void* e, jintArray array, jint* elems, jint mode)
+{
+    {{.lib}}_free(elems);
 }
 
 #define JNI_REGISTER(func)                           \
@@ -346,4 +353,5 @@ lfi_jni_init(void)
     JNI_REGISTER(jni_GetVersion);
     JNI_REGISTER(jni_GetArrayLength);
     JNI_REGISTER(jni_GetIntArrayElements);
+    JNI_REGISTER(jni_ReleaseIntArrayElements);
 }
