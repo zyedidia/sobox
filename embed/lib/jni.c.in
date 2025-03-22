@@ -342,12 +342,12 @@ jni_ReleaseIntArrayElements(void* e, jintArray array, jint* sandbox_array, jint 
 
     switch (mode) {
     case 0:
-        memcpy(native_array, sandbox_array, len);
+        memcpy(native_array, sandbox_array, len * sizeof(jint));
         {{.lib}}_free(sandbox_array);
         (*jni_env)->ReleaseIntArrayElements(jni_env, array, native_array, 0);
         break;
     case JNI_COMMIT:
-        memcpy(native_array, sandbox_array, len);
+        memcpy(native_array, sandbox_array, len * sizeof(jint));
         (*jni_env)->ReleaseIntArrayElements(jni_env, array, native_array, JNI_COMMIT);
         break;
     case JNI_ABORT:
