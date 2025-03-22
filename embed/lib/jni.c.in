@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ht.h"
 #include "lib.h"
 #include "jni.h"
 
@@ -310,6 +311,8 @@ jni_GetArrayLength(void* e, jarray array)
     return (*jni_env)->GetArrayLength(jni_env, array);
 }
 
+static ht_t jni_buffers;
+
 static jint*
 jni_GetIntArrayElements(void* e, jintArray array, jboolean* isCopy)
 {
@@ -320,14 +323,38 @@ jni_GetIntArrayElements(void* e, jintArray array, jboolean* isCopy)
     jint* native_array = (*jni_env)->GetIntArrayElements(jni_env, array, isCopy);
     assert(native_array);
     memcpy(sandbox_array, native_array, len * sizeof(jint));
+
+    int ok = ht_put(&jni_buffers, sandbox_array, native_array);
+    assert(ok >= 0);
+
     return sandbox_array;
 }
 
 static void
-jni_ReleaseIntArrayElements(void* e, jintArray array, jint* elems, jint mode)
+jni_ReleaseIntArrayElements(void* e, jintArray array, jint* sandbox_array, jint mode)
 {
-    // TODO: also release int array elements that were previously allocated (need a table to track this)
-    {{.lib}}_free(elems);
+    bool found;
+    void* native_array = ht_get(&jni_buffers, sandbox_array, &found);
+    if (!found)
+        return;
+
+    jsize len = (*jni_env)->GetArrayLength(jni_env, array);
+
+    switch (mode) {
+    case 0:
+        memcpy(native_array, sandbox_array, len);
+        {{.lib}}_free(sandbox_array);
+        (*jni_env)->ReleaseIntArrayElements(jni_env, array, native_array, 0);
+        break;
+    case JNI_COMMIT:
+        memcpy(native_array, sandbox_array, len);
+        (*jni_env)->ReleaseIntArrayElements(jni_env, array, native_array, JNI_COMMIT);
+        break;
+    case JNI_ABORT:
+        {{.lib}}_free(sandbox_array);
+        (*jni_env)->ReleaseIntArrayElements(jni_env, array, native_array, JNI_ABORT);
+        break;
+    }
 }
 
 #define JNI_REGISTER(func)                           \
@@ -337,21 +364,37 @@ jni_ReleaseIntArrayElements(void* e, jintArray array, jint* elems, jint mode)
         proxy->func = fn;                            \
     } while (0)                                      \
 
-void
+bool
 lfi_jni_init(void)
 {
     struct JNIProxyObject* proxy = {{ .lib }}_malloc(sizeof(struct JNIProxyObject));
     if (!proxy) {
         fprintf(stderr, "proxy object allocation failed\n");
-        exit(1);
+        goto err1;
     }
     memset(proxy, 0, sizeof(struct JNIProxyObject));
     jni_proxy = {{ .lib }}_malloc(sizeof(struct JNIProxyObject*));
-    assert(jni_proxy);
+    if (!jni_proxy) {
+        fprintf(stderr, "failed to allocate jni_proxy pointer\n");
+        goto err2;
+    }
+
+    if (ht_alloc(&jni_buffers, 16) < 0)
+        goto err3;
+
     *jni_proxy = proxy;
 
     JNI_REGISTER(jni_GetVersion);
     JNI_REGISTER(jni_GetArrayLength);
     JNI_REGISTER(jni_GetIntArrayElements);
     JNI_REGISTER(jni_ReleaseIntArrayElements);
+
+    return true;
+
+err3:
+    {{ .lib }}_free(jni_proxy);
+err2:
+    {{ .lib }}_free(proxy);
+err1:
+    return false;
 }
