@@ -338,7 +338,11 @@ jni_GetStaticMethodID(void*, jclass clazz, const char* name, const char* sig)
     static jtype \
     jni_Call##typename##MethodV(void*, jobject obj, jmethodID methodID, va_list args) \
     { \
-        return (*jni_env)->Call##typename##MethodV(jni_env, obj, methodID, args); \
+        va_list args_copy; \
+        va_copy(args_copy, args); \
+        jtype ret = (*jni_env)->Call##typename##MethodV(jni_env, obj, methodID, args); \
+        va_end(args_copy); \
+        return ret; \
     }
 
 // TODO: sanitize args
@@ -351,9 +355,12 @@ jni_GetStaticMethodID(void*, jclass clazz, const char* name, const char* sig)
 
 // TODO: sanitize args
 static void
-jni_CallVoidMethodV(void*, jobject obj, jmethodID methodID, va_list args)
+jni_CallVoidMethodV(void* e, jobject obj, jmethodID methodID, va_list args)
 {
-    (*jni_env)->CallVoidMethodV(jni_env, obj, methodID, args);
+    va_list args_copy;
+    va_copy(args_copy, args);
+    (*jni_env)->CallVoidMethodV(jni_env, obj, methodID, args_copy);
+    va_end(args_copy);
 }
 
 // TODO: sanitize args
@@ -368,7 +375,11 @@ jni_CallVoidMethodA(void*, jobject obj, jmethodID methodID, jvalue* args)
     static jtype \
     jni_CallNonvirtual##typename##MethodV(void*, jobject obj, jclass clazz, jmethodID methodID, va_list args) \
     { \
-        return (*jni_env)->CallNonvirtual##typename##MethodV(jni_env, obj, clazz, methodID, args); \
+        va_list args_copy; \
+        va_copy(args_copy, args); \
+        jtype ret = (*jni_env)->CallNonvirtual##typename##MethodV(jni_env, obj, clazz, methodID, args); \
+        va_end(args_copy); \
+        return ret; \
     }
 
 // TODO: sanitize args
@@ -383,7 +394,10 @@ jni_CallVoidMethodA(void*, jobject obj, jmethodID methodID, jvalue* args)
 static void
 jni_CallNonvirtualVoidMethodV(void*, jobject obj, jclass clazz, jmethodID methodID, va_list args)
 {
+    va_list args_copy;
+    va_copy(args_copy, args);
     (*jni_env)->CallNonvirtualVoidMethodV(jni_env, obj, clazz, methodID, args);
+    va_end(args_copy);
 }
 
 // TODO: sanitize args
@@ -398,7 +412,11 @@ jni_CallNonvirtualVoidMethodA(void*, jobject obj, jclass clazz, jmethodID method
     static jtype \
     jni_CallStatic##typename##MethodV(void*, jclass clazz, jmethodID methodID, va_list args) \
     { \
-        return (*jni_env)->CallStatic##typename##MethodV(jni_env, clazz, methodID, args); \
+        va_list args_copy; \
+        va_copy(args_copy, args); \
+        jtype ret = (*jni_env)->CallStatic##typename##MethodV(jni_env, clazz, methodID, args); \
+        va_end(args_copy); \
+        return ret; \
     }
 
 // TODO: sanitize args
@@ -413,7 +431,10 @@ jni_CallNonvirtualVoidMethodA(void*, jobject obj, jclass clazz, jmethodID method
 static void
 jni_CallStaticVoidMethodV(void*, jclass clazz, jmethodID methodID, va_list args)
 {
+    va_list args_copy;
+    va_copy(args_copy, args);
     (*jni_env)->CallStaticVoidMethodV(jni_env, clazz, methodID, args);
+    va_end(args_copy);
 }
 
 // TODO: sanitize args
