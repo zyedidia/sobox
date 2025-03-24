@@ -1,5 +1,12 @@
 #include "jni.h"
 
+void _lfi_jni_NewObject(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
+    va_list args;
+    va_start(args, methodID);
+    (*env)->NewObjectV(env, clazz, methodID, args);
+    va_end(args);
+}
+
 #define DEFINE_CallMethod(typename, jtype) \
     jtype _lfi_jni_Call##typename##Method(JNIEnv* env, jobject obj, jmethodID methodID, ...) { \
         va_list args; \

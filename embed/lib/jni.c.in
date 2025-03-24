@@ -28,11 +28,86 @@ jni_GetArrayLength(void*, jarray array)
     return (*jni_env)->GetArrayLength(jni_env, array);
 }
 
+// TODO: sanitize name and buf
+static jclass
+jni_DefineClass(void*, const char* name, jobject loader, const jbyte* buf, jsize len)
+{
+    return (*jni_env)->DefineClass(jni_env, name, loader, buf, len);
+}
+
+// TODO: sanitize name
 static jclass
 jni_FindClass(void*, const char* name)
 {
-    // TODO: sanitize name
     return (*jni_env)->FindClass(jni_env, name);
+}
+
+static jmethodID
+jni_FromReflectedMethod(void*, jobject method)
+{
+    return (*jni_env)->FromReflectedMethod(jni_env, method);
+}
+
+static jfieldID
+jni_FromReflectedField(void*, jobject field)
+{
+    return (*jni_env)->FromReflectedField(jni_env, field);
+}
+
+static jobject
+jni_ToReflectedMethod(void*, jclass cls, jmethodID methodID, jboolean isStatic)
+{
+    return (*jni_env)->ToReflectedMethod(jni_env, cls, methodID, isStatic);
+}
+
+static jclass
+jni_GetSuperclass(void*, jclass sub)
+{
+    return (*jni_env)->GetSuperclass(jni_env, sub);
+}
+
+static jboolean
+jni_IsAssignableFrom(void*, jclass sub, jclass sup)
+{
+    return (*jni_env)->IsAssignableFrom(jni_env, sub, sup);
+}
+
+static jobject
+jni_ToReflectedField(void*, jclass cls, jfieldID fieldID, jboolean isStatic)
+{
+    return (*jni_env)->ToReflectedField(jni_env, cls, fieldID, isStatic);
+}
+
+static jobject
+jni_AllocObject(void*, jclass clazz)
+{
+    return (*jni_env)->AllocObject(jni_env, clazz);
+}
+
+// TODO: sanitize args
+static jobject
+jni_NewObjectV(void*, jclass clazz, jmethodID methodID, va_list args)
+{
+    return (*jni_env)->NewObjectV(jni_env, clazz, methodID, args);
+}
+
+// TODO: sanitize args
+static jobject
+jni_NewObjectA(void*, jclass clazz, jmethodID methodID, const jvalue* args)
+{
+    return (*jni_env)->NewObjectA(jni_env, clazz, methodID, args);
+}
+
+static jclass
+jni_GetObjectClass(void*, jobject obj)
+{
+    return (*jni_env)->GetObjectClass(jni_env, obj);
+}
+
+static jboolean
+jni_IsInstanceOf(void*, jobject obj, jclass clazz)
+{
+    return (*jni_env)->IsInstanceOf(jni_env, obj, clazz);
 }
 
 static jint
@@ -405,6 +480,7 @@ DEFINE_CallStaticMethodA(Long, jlong)
 DEFINE_CallStaticMethodA(Float, jfloat)
 DEFINE_CallStaticMethodA(Double, jdouble)
 
+extern void* __lfisym__lfi_jni_NewObject;
 #define DEFINE_CallMethod(method) \
     extern void* __lfisym__lfi_jni_##method##ObjectMethod; \
     extern void* __lfisym__lfi_jni_##method##BooleanMethod; \
@@ -420,12 +496,6 @@ DEFINE_CallStaticMethodA(Double, jdouble)
 DEFINE_CallMethod(Call)
 DEFINE_CallMethod(CallNonvirtual)
 DEFINE_CallMethod(CallStatic)
-
-static jclass
-jni_GetObjectClass(void*, jobject obj)
-{
-    return (*jni_env)->GetObjectClass(jni_env, obj);
-}
 
 bool
 lfi_jni_init(void)
@@ -470,6 +540,18 @@ lfi_jni_init(void)
 
     JNI_REGISTER(jni_GetVersion);
     JNI_REGISTER(jni_GetArrayLength);
+    JNI_REGISTER(jni_DefineClass);
+    JNI_REGISTER(jni_FromReflectedMethod);
+    JNI_REGISTER(jni_FromReflectedField);
+    JNI_REGISTER(jni_ToReflectedMethod);
+    JNI_REGISTER(jni_GetSuperclass);
+    JNI_REGISTER(jni_IsAssignableFrom);
+    JNI_REGISTER(jni_ToReflectedField);
+    JNI_REGISTER(jni_AllocObject);
+    JNI_REGISTER(jni_NewObjectV);
+    JNI_REGISTER(jni_NewObjectA);
+    JNI_REGISTER(jni_GetObjectClass);
+    JNI_REGISTER(jni_IsInstanceOf);
     JNI_REGISTER(jni_NewBooleanArray);
     JNI_REGISTER(jni_NewByteArray);
     JNI_REGISTER(jni_NewCharArray);
@@ -638,7 +720,7 @@ lfi_jni_init(void)
     JNI_REGISTER_INTERNAL(jni_CallStaticFloatMethod);
     JNI_REGISTER_INTERNAL(jni_CallStaticDoubleMethod);
     JNI_REGISTER_INTERNAL(jni_CallStaticVoidMethod);
-    JNI_REGISTER(jni_GetObjectClass);
+    JNI_REGISTER_INTERNAL(jni_NewObject);
 
     return true;
 

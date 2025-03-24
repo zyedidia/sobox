@@ -49,6 +49,7 @@ var exposed = []string{
 	"_lfi_jni_CallStaticFloatMethod",
 	"_lfi_jni_CallStaticDoubleMethod",
 	"_lfi_jni_CallStaticVoidMethod",
+	"_lfi_jni_NewObject",
 }
 
 func IsExport(sym string, exports map[string]bool) bool {
