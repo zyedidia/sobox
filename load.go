@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"debug/elf"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -134,6 +133,5 @@ func ObjGetStackArgs(file *elf.File, es map[string]bool) map[string][]StackArg {
 		info[sym] = args
 	}
 
-	fmt.Println(info)
 	return info
 }
