@@ -13,10 +13,7 @@ JNIEnv* jni_env;
 static void
 jni_Disabled(void* e)
 {
-    jclass exc = (*jni_env)->FindClass(jni_env, "java/lang/RuntimeException");
-    if (exc != NULL) { // Check if class was found
-        (*jni_env)->ThrowNew(jni_env, exc, "The requested JNI callback is disabled in this sandbox\n");
-    }
+    (*jni_env)->FatalError(jni_env, "The requested JNI callback is disabled in this sandbox");
 }
 
 static jint
@@ -247,6 +244,189 @@ DEFINE_ReleaseArrayElements(Long, jlong)
 DEFINE_ReleaseArrayElements(Float, jfloat)
 DEFINE_ReleaseArrayElements(Double, jdouble)
 
+static jmethodID
+jni_GetMethodID(void*, jclass clazz, const char* name, const char* sig)
+{
+    // TODO: sanitize name and sig
+    return (*jni_env)->GetMethodID(jni_env, clazz, name, sig);
+}
+
+static jmethodID
+jni_GetStaticMethodID(void*, jclass clazz, const char* name, const char* sig)
+{
+    // TODO: sanitize name and sig
+    return (*jni_env)->GetStaticMethodID(jni_env, clazz, name, sig);
+}
+
+// TODO: sanitize args
+#define DEFINE_CallMethodV(typename, jtype) \
+    static jtype \
+    jni_Call##typename##MethodV(void*, jobject obj, jmethodID methodID, va_list args) \
+    { \
+        return (*jni_env)->Call##typename##MethodV(jni_env, obj, methodID, args); \
+    }
+
+// TODO: sanitize args
+#define DEFINE_CallMethodA(typename, jtype) \
+    static jtype \
+    jni_Call##typename##MethodA(void*, jobject obj, jmethodID methodID, jvalue* args) \
+    { \
+        return (*jni_env)->Call##typename##MethodA(jni_env, obj, methodID, args); \
+    }
+
+// TODO: sanitize args
+static void
+jni_CallVoidMethodV(void*, jobject obj, jmethodID methodID, va_list args)
+{
+    (*jni_env)->CallVoidMethodV(jni_env, obj, methodID, args);
+}
+
+// TODO: sanitize args
+static void
+jni_CallVoidMethodA(void*, jobject obj, jmethodID methodID, jvalue* args)
+{
+    (*jni_env)->CallVoidMethodA(jni_env, obj, methodID, args);
+}
+
+// TODO: sanitize args
+#define DEFINE_CallNonvirtualMethodV(typename, jtype) \
+    static jtype \
+    jni_CallNonvirtual##typename##MethodV(void*, jobject obj, jclass clazz, jmethodID methodID, va_list args) \
+    { \
+        return (*jni_env)->CallNonvirtual##typename##MethodV(jni_env, obj, clazz, methodID, args); \
+    }
+
+// TODO: sanitize args
+#define DEFINE_CallNonvirtualMethodA(typename, jtype) \
+    static jtype \
+    jni_CallNonvirtual##typename##MethodA(void*, jobject obj, jclass clazz, jmethodID methodID, jvalue* args) \
+    { \
+        return (*jni_env)->CallNonvirtual##typename##MethodA(jni_env, obj, clazz, methodID, args); \
+    }
+
+// TODO: sanitize args
+static void
+jni_CallNonvirtualVoidMethodV(void*, jobject obj, jclass clazz, jmethodID methodID, va_list args)
+{
+    (*jni_env)->CallNonvirtualVoidMethodV(jni_env, obj, clazz, methodID, args);
+}
+
+// TODO: sanitize args
+static void
+jni_CallNonvirtualVoidMethodA(void*, jobject obj, jclass clazz, jmethodID methodID, jvalue* args)
+{
+    (*jni_env)->CallNonvirtualVoidMethodA(jni_env, obj, clazz, methodID, args);
+}
+
+// TODO: sanitize args
+#define DEFINE_CallStaticMethodV(typename, jtype) \
+    static jtype \
+    jni_CallStatic##typename##MethodV(void*, jclass clazz, jmethodID methodID, va_list args) \
+    { \
+        return (*jni_env)->CallStatic##typename##MethodV(jni_env, clazz, methodID, args); \
+    }
+
+// TODO: sanitize args
+#define DEFINE_CallStaticMethodA(typename, jtype) \
+    static jtype \
+    jni_CallStatic##typename##MethodA(void*, jclass clazz, jmethodID methodID, jvalue* args) \
+    { \
+        return (*jni_env)->CallStatic##typename##MethodA(jni_env, clazz, methodID, args); \
+    }
+
+// TODO: sanitize args
+static void
+jni_CallStaticVoidMethodV(void*, jclass clazz, jmethodID methodID, va_list args)
+{
+    (*jni_env)->CallStaticVoidMethodV(jni_env, clazz, methodID, args);
+}
+
+// TODO: sanitize args
+static void
+jni_CallStaticVoidMethodA(void*, jclass clazz, jmethodID methodID, jvalue* args)
+{
+    (*jni_env)->CallStaticVoidMethodA(jni_env, clazz, methodID, args);
+}
+
+DEFINE_CallMethodV(Object, jobject)
+DEFINE_CallMethodV(Boolean, jboolean)
+DEFINE_CallMethodV(Byte, jbyte)
+DEFINE_CallMethodV(Char, jchar)
+DEFINE_CallMethodV(Short, jshort)
+DEFINE_CallMethodV(Int, jint)
+DEFINE_CallMethodV(Long, jlong)
+DEFINE_CallMethodV(Float, jfloat)
+DEFINE_CallMethodV(Double, jdouble)
+DEFINE_CallMethodA(Object, jobject)
+DEFINE_CallMethodA(Boolean, jboolean)
+DEFINE_CallMethodA(Byte, jbyte)
+DEFINE_CallMethodA(Char, jchar)
+DEFINE_CallMethodA(Short, jshort)
+DEFINE_CallMethodA(Int, jint)
+DEFINE_CallMethodA(Long, jlong)
+DEFINE_CallMethodA(Float, jfloat)
+DEFINE_CallMethodA(Double, jdouble)
+
+DEFINE_CallNonvirtualMethodV(Object, jobject)
+DEFINE_CallNonvirtualMethodV(Boolean, jboolean)
+DEFINE_CallNonvirtualMethodV(Byte, jbyte)
+DEFINE_CallNonvirtualMethodV(Char, jchar)
+DEFINE_CallNonvirtualMethodV(Short, jshort)
+DEFINE_CallNonvirtualMethodV(Int, jint)
+DEFINE_CallNonvirtualMethodV(Long, jlong)
+DEFINE_CallNonvirtualMethodV(Float, jfloat)
+DEFINE_CallNonvirtualMethodV(Double, jdouble)
+DEFINE_CallNonvirtualMethodA(Object, jobject)
+DEFINE_CallNonvirtualMethodA(Boolean, jboolean)
+DEFINE_CallNonvirtualMethodA(Byte, jbyte)
+DEFINE_CallNonvirtualMethodA(Char, jchar)
+DEFINE_CallNonvirtualMethodA(Short, jshort)
+DEFINE_CallNonvirtualMethodA(Int, jint)
+DEFINE_CallNonvirtualMethodA(Long, jlong)
+DEFINE_CallNonvirtualMethodA(Float, jfloat)
+DEFINE_CallNonvirtualMethodA(Double, jdouble)
+
+DEFINE_CallStaticMethodV(Object, jobject)
+DEFINE_CallStaticMethodV(Boolean, jboolean)
+DEFINE_CallStaticMethodV(Byte, jbyte)
+DEFINE_CallStaticMethodV(Char, jchar)
+DEFINE_CallStaticMethodV(Short, jshort)
+DEFINE_CallStaticMethodV(Int, jint)
+DEFINE_CallStaticMethodV(Long, jlong)
+DEFINE_CallStaticMethodV(Float, jfloat)
+DEFINE_CallStaticMethodV(Double, jdouble)
+DEFINE_CallStaticMethodA(Object, jobject)
+DEFINE_CallStaticMethodA(Boolean, jboolean)
+DEFINE_CallStaticMethodA(Byte, jbyte)
+DEFINE_CallStaticMethodA(Char, jchar)
+DEFINE_CallStaticMethodA(Short, jshort)
+DEFINE_CallStaticMethodA(Int, jint)
+DEFINE_CallStaticMethodA(Long, jlong)
+DEFINE_CallStaticMethodA(Float, jfloat)
+DEFINE_CallStaticMethodA(Double, jdouble)
+
+#define DEFINE_CallMethod(method) \
+    extern void* __lfisym__lfi_jni_##method##ObjectMethod; \
+    extern void* __lfisym__lfi_jni_##method##BooleanMethod; \
+    extern void* __lfisym__lfi_jni_##method##ByteMethod; \
+    extern void* __lfisym__lfi_jni_##method##CharMethod; \
+    extern void* __lfisym__lfi_jni_##method##ShortMethod; \
+    extern void* __lfisym__lfi_jni_##method##IntMethod; \
+    extern void* __lfisym__lfi_jni_##method##LongMethod; \
+    extern void* __lfisym__lfi_jni_##method##FloatMethod; \
+    extern void* __lfisym__lfi_jni_##method##DoubleMethod; \
+    extern void* __lfisym__lfi_jni_##method##VoidMethod;
+
+DEFINE_CallMethod(Call)
+DEFINE_CallMethod(CallNonvirtual)
+DEFINE_CallMethod(CallStatic)
+
+static jclass
+jni_GetObjectClass(void*, jobject obj)
+{
+    return (*jni_env)->GetObjectClass(jni_env, obj);
+}
+
 bool
 lfi_jni_init(void)
 {
@@ -281,6 +461,12 @@ lfi_jni_init(void)
         assert(fn);                                  \
         proxy->func = fn;                            \
     } while (0)                                      \
+
+#define JNI_REGISTER_INTERNAL(func)                  \
+    do {                                             \
+        proxy->func = __lfisym__lfi_##func;          \
+    } while (0)                                      \
+
 
     JNI_REGISTER(jni_GetVersion);
     JNI_REGISTER(jni_GetArrayLength);
@@ -360,6 +546,99 @@ lfi_jni_init(void)
     JNI_REGISTER(jni_ExceptionDescribe);
     JNI_REGISTER(jni_ExceptionClear);
     JNI_REGISTER(jni_FatalError);
+    JNI_REGISTER(jni_CallObjectMethodV);
+    JNI_REGISTER(jni_CallObjectMethodA);
+    JNI_REGISTER(jni_CallBooleanMethodV);
+    JNI_REGISTER(jni_CallBooleanMethodA);
+    JNI_REGISTER(jni_CallByteMethodV);
+    JNI_REGISTER(jni_CallByteMethodA);
+    JNI_REGISTER(jni_CallCharMethodV);
+    JNI_REGISTER(jni_CallCharMethodA);
+    JNI_REGISTER(jni_CallShortMethodV);
+    JNI_REGISTER(jni_CallShortMethodA);
+    JNI_REGISTER(jni_CallIntMethodV);
+    JNI_REGISTER(jni_CallIntMethodA);
+    JNI_REGISTER(jni_CallLongMethodV);
+    JNI_REGISTER(jni_CallLongMethodA);
+    JNI_REGISTER(jni_CallFloatMethodV);
+    JNI_REGISTER(jni_CallFloatMethodA);
+    JNI_REGISTER(jni_CallDoubleMethodV);
+    JNI_REGISTER(jni_CallDoubleMethodA);
+    JNI_REGISTER(jni_CallVoidMethodV);
+    JNI_REGISTER(jni_CallVoidMethodA);
+    JNI_REGISTER(jni_CallNonvirtualObjectMethodV);
+    JNI_REGISTER(jni_CallNonvirtualObjectMethodA);
+    JNI_REGISTER(jni_CallNonvirtualBooleanMethodV);
+    JNI_REGISTER(jni_CallNonvirtualBooleanMethodA);
+    JNI_REGISTER(jni_CallNonvirtualByteMethodV);
+    JNI_REGISTER(jni_CallNonvirtualByteMethodA);
+    JNI_REGISTER(jni_CallNonvirtualCharMethodV);
+    JNI_REGISTER(jni_CallNonvirtualCharMethodA);
+    JNI_REGISTER(jni_CallNonvirtualShortMethodV);
+    JNI_REGISTER(jni_CallNonvirtualShortMethodA);
+    JNI_REGISTER(jni_CallNonvirtualIntMethodV);
+    JNI_REGISTER(jni_CallNonvirtualIntMethodA);
+    JNI_REGISTER(jni_CallNonvirtualLongMethodV);
+    JNI_REGISTER(jni_CallNonvirtualLongMethodA);
+    JNI_REGISTER(jni_CallNonvirtualFloatMethodV);
+    JNI_REGISTER(jni_CallNonvirtualFloatMethodA);
+    JNI_REGISTER(jni_CallNonvirtualDoubleMethodV);
+    JNI_REGISTER(jni_CallNonvirtualDoubleMethodA);
+    JNI_REGISTER(jni_CallNonvirtualVoidMethodV);
+    JNI_REGISTER(jni_CallNonvirtualVoidMethodA);
+    JNI_REGISTER(jni_CallStaticObjectMethodV);
+    JNI_REGISTER(jni_CallStaticObjectMethodA);
+    JNI_REGISTER(jni_CallStaticBooleanMethodV);
+    JNI_REGISTER(jni_CallStaticBooleanMethodA);
+    JNI_REGISTER(jni_CallStaticByteMethodV);
+    JNI_REGISTER(jni_CallStaticByteMethodA);
+    JNI_REGISTER(jni_CallStaticCharMethodV);
+    JNI_REGISTER(jni_CallStaticCharMethodA);
+    JNI_REGISTER(jni_CallStaticShortMethodV);
+    JNI_REGISTER(jni_CallStaticShortMethodA);
+    JNI_REGISTER(jni_CallStaticIntMethodV);
+    JNI_REGISTER(jni_CallStaticIntMethodA);
+    JNI_REGISTER(jni_CallStaticLongMethodV);
+    JNI_REGISTER(jni_CallStaticLongMethodA);
+    JNI_REGISTER(jni_CallStaticFloatMethodV);
+    JNI_REGISTER(jni_CallStaticFloatMethodA);
+    JNI_REGISTER(jni_CallStaticDoubleMethodV);
+    JNI_REGISTER(jni_CallStaticDoubleMethodA);
+    JNI_REGISTER(jni_CallStaticVoidMethodV);
+    JNI_REGISTER(jni_CallStaticVoidMethodA);
+    JNI_REGISTER(jni_GetMethodID);
+    JNI_REGISTER(jni_GetStaticMethodID);
+    JNI_REGISTER_INTERNAL(jni_CallObjectMethod);
+    JNI_REGISTER_INTERNAL(jni_CallBooleanMethod);
+    JNI_REGISTER_INTERNAL(jni_CallByteMethod);
+    JNI_REGISTER_INTERNAL(jni_CallCharMethod);
+    JNI_REGISTER_INTERNAL(jni_CallShortMethod);
+    JNI_REGISTER_INTERNAL(jni_CallIntMethod);
+    JNI_REGISTER_INTERNAL(jni_CallLongMethod);
+    JNI_REGISTER_INTERNAL(jni_CallFloatMethod);
+    JNI_REGISTER_INTERNAL(jni_CallDoubleMethod);
+    JNI_REGISTER_INTERNAL(jni_CallVoidMethod);
+    JNI_REGISTER_INTERNAL(jni_CallNonvirtualObjectMethod);
+    JNI_REGISTER_INTERNAL(jni_CallNonvirtualBooleanMethod);
+    JNI_REGISTER_INTERNAL(jni_CallNonvirtualByteMethod);
+    JNI_REGISTER_INTERNAL(jni_CallNonvirtualCharMethod);
+    JNI_REGISTER_INTERNAL(jni_CallNonvirtualShortMethod);
+    JNI_REGISTER_INTERNAL(jni_CallNonvirtualIntMethod);
+    JNI_REGISTER_INTERNAL(jni_CallNonvirtualLongMethod);
+    JNI_REGISTER_INTERNAL(jni_CallNonvirtualFloatMethod);
+    JNI_REGISTER_INTERNAL(jni_CallNonvirtualDoubleMethod);
+    JNI_REGISTER_INTERNAL(jni_CallNonvirtualVoidMethod);
+    JNI_REGISTER_INTERNAL(jni_CallStaticObjectMethod);
+    JNI_REGISTER_INTERNAL(jni_CallStaticBooleanMethod);
+    JNI_REGISTER_INTERNAL(jni_CallStaticByteMethod);
+    JNI_REGISTER_INTERNAL(jni_CallStaticCharMethod);
+    JNI_REGISTER_INTERNAL(jni_CallStaticShortMethod);
+    JNI_REGISTER_INTERNAL(jni_CallStaticIntMethod);
+    JNI_REGISTER_INTERNAL(jni_CallStaticLongMethod);
+    JNI_REGISTER_INTERNAL(jni_CallStaticFloatMethod);
+    JNI_REGISTER_INTERNAL(jni_CallStaticDoubleMethod);
+    JNI_REGISTER_INTERNAL(jni_CallStaticVoidMethod);
+    JNI_REGISTER(jni_GetObjectClass);
 
     return true;
 

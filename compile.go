@@ -31,6 +31,7 @@ func CompileStub(dir, lib, libpath string, static bool) string {
 
 	args := []string{
 		filepath.Join(dir, "embed/stub/thread.c"),
+		filepath.Join(dir, "embed/stub/jni_call.c"),
 		filepath.Join(dir, fmt.Sprintf("embed/stub/arch/%s/main.s", Arch(*arch))),
 		"-o", stub,
 		"-L" + filepath.Dir(libpath),
