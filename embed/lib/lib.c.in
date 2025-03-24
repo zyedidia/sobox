@@ -155,6 +155,12 @@ void
     lfi_jni_init();
 }
 
+__attribute__((weak)) void
+lfi_lib_init(struct LFILibCalls* lfi_)
+{
+    {{ .lib }}_init(lfi_);
+}
+
 extern void {{ .lib }}__lfi_thread_create(void* fn);
 extern void {{ .lib }}__lfi_pause(void);
 
