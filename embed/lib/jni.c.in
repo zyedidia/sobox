@@ -229,6 +229,7 @@ DEFINE_SetStaticField(Double, jdouble)
 
 static ht_t jni_buffers;
 
+// TODO: sanitize isCopy
 #define DEFINE_GetArrayElements(typename, jtype) \
     static jtype* \
     jni_Get##typename##ArrayElements(void*, jtype##Array array, jboolean* isCopy) \
@@ -318,6 +319,58 @@ DEFINE_ReleaseArrayElements(Int, jint)
 DEFINE_ReleaseArrayElements(Long, jlong)
 DEFINE_ReleaseArrayElements(Float, jfloat)
 DEFINE_ReleaseArrayElements(Double, jdouble)
+
+// TODO: sanitize unicode
+static jstring
+jni_NewString(void*, const jchar* unicode, jsize len)
+{
+    return (*jni_env)->NewString(jni_env, unicode, len);
+}
+
+static jsize
+jni_GetStringLength(void*, jstring str)
+{
+    return (*jni_env)->GetStringLength(jni_env, str);
+}
+
+// TODO: sanitize isCopy
+static const jchar*
+jni_GetStringChars(void*, jstring str, jboolean* isCopy)
+{
+    assert(!"GetStringChars: unimplemented");
+}
+
+static void
+jni_ReleaseStringChars(void*, jstring str, const jchar* chars)
+{
+    assert(!"ReleaseStringChars: unimplemented");
+}
+
+// TODO: sanitize utf
+static jstring
+jni_NewStringUTF(void*, const char* utf)
+{
+    return (*jni_env)->NewStringUTF(jni_env, utf);
+}
+
+static jsize
+jni_GetStringUTFLength(void*, jstring str)
+{
+    return (*jni_env)->GetStringUTFLength(jni_env, str);
+}
+
+// TODO: sanitize isCopy
+static const jchar*
+jni_GetStringUTFChars(void*, jstring str, jboolean* isCopy)
+{
+    assert(!"GetStringUTFChars: unimplemented");
+}
+
+static void
+jni_ReleaseStringUTFChars(void*, jstring str, const jchar* chars)
+{
+    assert(!"ReleaseStringUTFChars: unimplemented");
+}
 
 static jmethodID
 jni_GetMethodID(void*, jclass clazz, const char* name, const char* sig)
@@ -711,6 +764,10 @@ lfi_jni_init(void)
     JNI_REGISTER(jni_CallStaticVoidMethodA);
     JNI_REGISTER(jni_GetMethodID);
     JNI_REGISTER(jni_GetStaticMethodID);
+    JNI_REGISTER(jni_NewString);
+    JNI_REGISTER(jni_GetStringLength);
+    JNI_REGISTER(jni_NewStringUTF);
+    JNI_REGISTER(jni_GetStringUTFLength);
     JNI_REGISTER_INTERNAL(jni_CallObjectMethod);
     JNI_REGISTER_INTERNAL(jni_CallBooleanMethod);
     JNI_REGISTER_INTERNAL(jni_CallByteMethod);
