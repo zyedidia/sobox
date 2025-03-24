@@ -20,17 +20,140 @@ jni_Disabled(void* e)
 }
 
 static jint
-jni_GetVersion(void* e)
+jni_GetVersion(void*)
 {
-    printf("GetVersion called with env: %p\n", e);
     return (*jni_env)->GetVersion(jni_env);
 }
 
 static jsize
-jni_GetArrayLength(void* e, jarray array)
+jni_GetArrayLength(void*, jarray array)
 {
     return (*jni_env)->GetArrayLength(jni_env, array);
 }
+
+static jclass
+jni_FindClass(void*, const char* name)
+{
+    // TODO: sanitize name
+    return (*jni_env)->FindClass(jni_env, name);
+}
+
+static jint
+jni_Throw(void*, jthrowable obj)
+{
+    return (*jni_env)->Throw(jni_env, obj);
+}
+
+static jint
+jni_ThrowNew(void*, jclass clazz, const char* msg)
+{
+    // TODO: sanitize msg
+    return (*jni_env)->ThrowNew(jni_env, clazz, msg);
+}
+
+static jthrowable
+jni_ExceptionOccurred(void*)
+{
+    return (*jni_env)->ExceptionOccurred(jni_env);
+}
+
+static void
+jni_ExceptionDescribe(void*)
+{
+    (*jni_env)->ExceptionDescribe(jni_env);
+}
+
+static void
+jni_ExceptionClear(void*)
+{
+    (*jni_env)->ExceptionClear(jni_env);
+}
+
+static void
+jni_FatalError(void*, const char* msg)
+{
+    // TODO: sanitize msg
+    (*jni_env)->FatalError(jni_env, msg);
+}
+
+static jfieldID
+jni_GetFieldID(void*, jclass clazz, const char* name, const char* sig)
+{
+    // TODO: sanitize name and sig
+    return (*jni_env)->GetFieldID(jni_env, clazz, name, sig);
+}
+
+#define DEFINE_GetField(typename, jtype) \
+    static jtype \
+    jni_Get##typename##Field(void*, jobject obj, jfieldID fieldID) \
+    { \
+        return (*jni_env)->Get##typename##Field(jni_env, obj, fieldID); \
+    }
+
+#define DEFINE_SetField(typename, jtype) \
+    static void \
+    jni_Set##typename##Field(void*, jobject obj, jfieldID fieldID, jtype val) \
+    { \
+        (*jni_env)->Set##typename##Field(jni_env, obj, fieldID, val); \
+    }
+
+static jfieldID
+jni_GetStaticFieldID(void*, jclass clazz, const char* name, const char* sig)
+{
+    // TODO: sanitize name and sig
+    return (*jni_env)->GetStaticFieldID(jni_env, clazz, name, sig);
+}
+
+#define DEFINE_GetStaticField(typename, jtype) \
+    static jtype \
+    jni_GetStatic##typename##Field(void*, jobject obj, jfieldID fieldID) \
+    { \
+        return (*jni_env)->GetStatic##typename##Field(jni_env, obj, fieldID); \
+    }
+
+#define DEFINE_SetStaticField(typename, jtype) \
+    static void \
+    jni_SetStatic##typename##Field(void*, jobject obj, jfieldID fieldID, jtype val) \
+    { \
+        (*jni_env)->SetStatic##typename##Field(jni_env, obj, fieldID, val); \
+    }
+
+DEFINE_GetField(Object, jobject)
+DEFINE_GetField(Boolean, jboolean)
+DEFINE_GetField(Byte, jbyte)
+DEFINE_GetField(Char, jchar)
+DEFINE_GetField(Short, jshort)
+DEFINE_GetField(Int, jint)
+DEFINE_GetField(Long, jlong)
+DEFINE_GetField(Float, jfloat)
+DEFINE_GetField(Double, jdouble)
+DEFINE_SetField(Object, jobject)
+DEFINE_SetField(Boolean, jboolean)
+DEFINE_SetField(Byte, jbyte)
+DEFINE_SetField(Char, jchar)
+DEFINE_SetField(Short, jshort)
+DEFINE_SetField(Int, jint)
+DEFINE_SetField(Long, jlong)
+DEFINE_SetField(Float, jfloat)
+DEFINE_SetField(Double, jdouble)
+DEFINE_GetStaticField(Object, jobject)
+DEFINE_GetStaticField(Boolean, jboolean)
+DEFINE_GetStaticField(Byte, jbyte)
+DEFINE_GetStaticField(Char, jchar)
+DEFINE_GetStaticField(Short, jshort)
+DEFINE_GetStaticField(Int, jint)
+DEFINE_GetStaticField(Long, jlong)
+DEFINE_GetStaticField(Float, jfloat)
+DEFINE_GetStaticField(Double, jdouble)
+DEFINE_SetStaticField(Object, jobject)
+DEFINE_SetStaticField(Boolean, jboolean)
+DEFINE_SetStaticField(Byte, jbyte)
+DEFINE_SetStaticField(Char, jchar)
+DEFINE_SetStaticField(Short, jshort)
+DEFINE_SetStaticField(Int, jint)
+DEFINE_SetStaticField(Long, jlong)
+DEFINE_SetStaticField(Float, jfloat)
+DEFINE_SetStaticField(Double, jdouble)
 
 static ht_t jni_buffers;
 
@@ -76,7 +199,7 @@ static ht_t jni_buffers;
         } \
     }
 
-// TODO: make sure buf is inside the sandbox
+// TODO: sanitize buf
 #define DEFINE_SetArrayRegion(typename, jtype) \
     static void \
     jni_Set##typename##ArrayRegion(void*, jtype##Array array, jsize start, jsize len, const jtype* buf) \
@@ -99,7 +222,6 @@ DEFINE_GetArrayElements(Int, jint)
 DEFINE_GetArrayElements(Long, jlong)
 DEFINE_GetArrayElements(Float, jfloat)
 DEFINE_GetArrayElements(Double, jdouble)
-
 DEFINE_NewArray(Boolean, jboolean)
 DEFINE_NewArray(Byte, jbyte)
 DEFINE_NewArray(Char, jchar)
@@ -108,7 +230,6 @@ DEFINE_NewArray(Int, jint)
 DEFINE_NewArray(Long, jlong)
 DEFINE_NewArray(Float, jfloat)
 DEFINE_NewArray(Double, jdouble)
-
 DEFINE_SetArrayRegion(Boolean, jboolean)
 DEFINE_SetArrayRegion(Byte, jbyte)
 DEFINE_SetArrayRegion(Char, jchar)
@@ -117,7 +238,6 @@ DEFINE_SetArrayRegion(Int, jint)
 DEFINE_SetArrayRegion(Long, jlong)
 DEFINE_SetArrayRegion(Float, jfloat)
 DEFINE_SetArrayRegion(Double, jdouble)
-
 DEFINE_ReleaseArrayElements(Boolean, jboolean)
 DEFINE_ReleaseArrayElements(Byte, jbyte)
 DEFINE_ReleaseArrayElements(Char, jchar)
@@ -196,6 +316,50 @@ lfi_jni_init(void)
     JNI_REGISTER(jni_SetLongArrayRegion);
     JNI_REGISTER(jni_SetFloatArrayRegion);
     JNI_REGISTER(jni_SetDoubleArrayRegion);
+    JNI_REGISTER(jni_GetFieldID);
+    JNI_REGISTER(jni_GetObjectField);
+    JNI_REGISTER(jni_GetBooleanField);
+    JNI_REGISTER(jni_GetByteField);
+    JNI_REGISTER(jni_GetCharField);
+    JNI_REGISTER(jni_GetShortField);
+    JNI_REGISTER(jni_GetIntField);
+    JNI_REGISTER(jni_GetLongField);
+    JNI_REGISTER(jni_GetFloatField);
+    JNI_REGISTER(jni_GetDoubleField);
+    JNI_REGISTER(jni_SetObjectField);
+    JNI_REGISTER(jni_SetBooleanField);
+    JNI_REGISTER(jni_SetByteField);
+    JNI_REGISTER(jni_SetCharField);
+    JNI_REGISTER(jni_SetShortField);
+    JNI_REGISTER(jni_SetIntField);
+    JNI_REGISTER(jni_SetLongField);
+    JNI_REGISTER(jni_SetFloatField);
+    JNI_REGISTER(jni_SetDoubleField);
+    JNI_REGISTER(jni_GetStaticFieldID);
+    JNI_REGISTER(jni_GetStaticObjectField);
+    JNI_REGISTER(jni_GetStaticBooleanField);
+    JNI_REGISTER(jni_GetStaticByteField);
+    JNI_REGISTER(jni_GetStaticCharField);
+    JNI_REGISTER(jni_GetStaticShortField);
+    JNI_REGISTER(jni_GetStaticIntField);
+    JNI_REGISTER(jni_GetStaticLongField);
+    JNI_REGISTER(jni_GetStaticFloatField);
+    JNI_REGISTER(jni_GetStaticDoubleField);
+    JNI_REGISTER(jni_SetStaticObjectField);
+    JNI_REGISTER(jni_SetStaticBooleanField);
+    JNI_REGISTER(jni_SetStaticByteField);
+    JNI_REGISTER(jni_SetStaticCharField);
+    JNI_REGISTER(jni_SetStaticShortField);
+    JNI_REGISTER(jni_SetStaticIntField);
+    JNI_REGISTER(jni_SetStaticLongField);
+    JNI_REGISTER(jni_SetStaticFloatField);
+    JNI_REGISTER(jni_SetStaticDoubleField);
+    JNI_REGISTER(jni_Throw);
+    JNI_REGISTER(jni_ThrowNew);
+    JNI_REGISTER(jni_ExceptionOccurred);
+    JNI_REGISTER(jni_ExceptionDescribe);
+    JNI_REGISTER(jni_ExceptionClear);
+    JNI_REGISTER(jni_FatalError);
 
     return true;
 
