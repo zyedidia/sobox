@@ -292,11 +292,20 @@ struct JNIProxyObject {
 
     // Virtual threads
 
-    void* jni_IsVirtualThrea;
+    void* jni_IsVirtualThread;
 };
 
 struct JNIProxyObject** jni_proxy;
 JNIEnv* jni_env;
+
+static void
+jni_Disabled(void* e)
+{
+    jclass exc = (*jni_env)->FindClass(jni_env, "java/lang/RuntimeException");
+    if (exc != NULL) { // Check if class was found
+        (*jni_env)->ThrowNew(jni_env, exc, "The requested JNI callback is disabled in this sandbox\n");
+    }
+}
 
 static jint
 jni_GetVersion(void* e)
@@ -313,56 +322,98 @@ jni_GetArrayLength(void* e, jarray array)
 
 static ht_t jni_buffers;
 
-static jint*
-jni_GetIntArrayElements(void* e, jintArray array, jboolean* isCopy)
-{
-    jsize len = (*jni_env)->GetArrayLength(jni_env, array);
-    jint* sandbox_array = {{.lib}}_malloc(len * sizeof(jint));
-    if (!sandbox_array)
-        return NULL;
-    jint* native_array = (*jni_env)->GetIntArrayElements(jni_env, array, isCopy);
-    assert(native_array);
-    memcpy(sandbox_array, native_array, len * sizeof(jint));
-
-    int ok = ht_put(&jni_buffers, sandbox_array, native_array);
-    assert(ok >= 0);
-
-    return sandbox_array;
-}
-
-static void
-jni_ReleaseIntArrayElements(void* e, jintArray array, jint* sandbox_array, jint mode)
-{
-    bool found;
-    void* native_array = ht_get(&jni_buffers, sandbox_array, &found);
-    if (!found)
-        return;
-
-    jsize len = (*jni_env)->GetArrayLength(jni_env, array);
-
-    switch (mode) {
-    case 0:
-        memcpy(native_array, sandbox_array, len * sizeof(jint));
-        {{.lib}}_free(sandbox_array);
-        (*jni_env)->ReleaseIntArrayElements(jni_env, array, native_array, 0);
-        break;
-    case JNI_COMMIT:
-        memcpy(native_array, sandbox_array, len * sizeof(jint));
-        (*jni_env)->ReleaseIntArrayElements(jni_env, array, native_array, JNI_COMMIT);
-        break;
-    case JNI_ABORT:
-        {{.lib}}_free(sandbox_array);
-        (*jni_env)->ReleaseIntArrayElements(jni_env, array, native_array, JNI_ABORT);
-        break;
+#define DEFINE_GetArrayElements(typename, jtype) \
+    static jtype* \
+    jni_Get##typename##ArrayElements(void*, jtype##Array array, jboolean* isCopy) \
+    { \
+        jsize len = (*jni_env)->GetArrayLength(jni_env, array); \
+        jtype* sandbox_array = {{.lib}}_malloc(len * sizeof(jtype)); \
+        if (!sandbox_array) \
+            return NULL; \
+        jtype* native_array = (*jni_env)->Get##typename##ArrayElements(jni_env, array, isCopy); \
+        assert(native_array); \
+        memcpy(sandbox_array, native_array, len * sizeof(jtype)); \
+        int ok = ht_put(&jni_buffers, sandbox_array, native_array); \
+        assert(ok >= 0); \
+        return sandbox_array; \
     }
-}
 
-#define JNI_REGISTER(func)                           \
-    do {                                             \
-        void* fn = {{ .lib }}_register_cb(&func, 0); \
-        assert(fn);                                  \
-        proxy->func = fn;                            \
-    } while (0)                                      \
+#define DEFINE_ReleaseArrayElements(typename, jtype) \
+    static void \
+    jni_Release##typename##ArrayElements(void* e, jtype##Array array, jtype* sandbox_array, jint mode) \
+    { \
+        bool found; \
+        void* native_array = ht_get(&jni_buffers, sandbox_array, &found); \
+        if (!found) \
+            return; \
+        jsize len = (*jni_env)->GetArrayLength(jni_env, array); \
+        switch (mode) { \
+        case 0: \
+            memcpy(native_array, sandbox_array, len * sizeof(jint)); \
+            {{.lib}}_free(sandbox_array); \
+            (*jni_env)->Release##typename##ArrayElements(jni_env, array, native_array, 0); \
+            break; \
+        case JNI_COMMIT: \
+            memcpy(native_array, sandbox_array, len * sizeof(jint)); \
+            (*jni_env)->Release##typename##ArrayElements(jni_env, array, native_array, JNI_COMMIT); \
+            break; \
+        case JNI_ABORT: \
+            {{.lib}}_free(sandbox_array); \
+            (*jni_env)->Release##typename##ArrayElements(jni_env, array, native_array, JNI_ABORT); \
+            break; \
+        } \
+    }
+
+// TODO: make sure buf is inside the sandbox
+#define DEFINE_SetArrayRegion(typename, jtype) \
+    static void \
+    jni_Set##typename##ArrayRegion(void*, jtype##Array array, jsize start, jsize len, const jtype* buf) \
+    { \
+        (*jni_env)->Set##typename##ArrayRegion(jni_env, array, start, len, buf); \
+    }
+
+#define DEFINE_NewArray(typename, jtype) \
+    static jtype##Array \
+    jni_New##typename##Array(void*, jsize len) \
+    { \
+        return (*jni_env)->New##typename##Array(jni_env, len); \
+    }
+
+DEFINE_GetArrayElements(Boolean, jboolean)
+DEFINE_GetArrayElements(Byte, jbyte)
+DEFINE_GetArrayElements(Char, jchar)
+DEFINE_GetArrayElements(Short, jshort)
+DEFINE_GetArrayElements(Int, jint)
+DEFINE_GetArrayElements(Long, jlong)
+DEFINE_GetArrayElements(Float, jfloat)
+DEFINE_GetArrayElements(Double, jdouble)
+
+DEFINE_NewArray(Boolean, jboolean)
+DEFINE_NewArray(Byte, jbyte)
+DEFINE_NewArray(Char, jchar)
+DEFINE_NewArray(Short, jshort)
+DEFINE_NewArray(Int, jint)
+DEFINE_NewArray(Long, jlong)
+DEFINE_NewArray(Float, jfloat)
+DEFINE_NewArray(Double, jdouble)
+
+DEFINE_SetArrayRegion(Boolean, jboolean)
+DEFINE_SetArrayRegion(Byte, jbyte)
+DEFINE_SetArrayRegion(Char, jchar)
+DEFINE_SetArrayRegion(Short, jshort)
+DEFINE_SetArrayRegion(Int, jint)
+DEFINE_SetArrayRegion(Long, jlong)
+DEFINE_SetArrayRegion(Float, jfloat)
+DEFINE_SetArrayRegion(Double, jdouble)
+
+DEFINE_ReleaseArrayElements(Boolean, jboolean)
+DEFINE_ReleaseArrayElements(Byte, jbyte)
+DEFINE_ReleaseArrayElements(Char, jchar)
+DEFINE_ReleaseArrayElements(Short, jshort)
+DEFINE_ReleaseArrayElements(Int, jint)
+DEFINE_ReleaseArrayElements(Long, jlong)
+DEFINE_ReleaseArrayElements(Float, jfloat)
+DEFINE_ReleaseArrayElements(Double, jdouble)
 
 bool
 lfi_jni_init(void)
@@ -382,12 +433,57 @@ lfi_jni_init(void)
     if (ht_alloc(&jni_buffers, 16) < 0)
         goto err3;
 
+    void* disabled = {{ .lib }}_register_cb(&jni_Disabled, 0);
+    assert(disabled);
+
+    void** fns = (void**) proxy;
+    for (size_t i = 4; i < sizeof(struct JNIProxyObject) / sizeof(void*); i++) {
+        fns[i] = disabled;
+    }
+
     *jni_proxy = proxy;
+
+#define JNI_REGISTER(func)                           \
+    do {                                             \
+        void* fn = {{ .lib }}_register_cb(&func, 0); \
+        assert(fn);                                  \
+        proxy->func = fn;                            \
+    } while (0)                                      \
 
     JNI_REGISTER(jni_GetVersion);
     JNI_REGISTER(jni_GetArrayLength);
+    JNI_REGISTER(jni_NewBooleanArray);
+    JNI_REGISTER(jni_NewByteArray);
+    JNI_REGISTER(jni_NewCharArray);
+    JNI_REGISTER(jni_NewShortArray);
+    JNI_REGISTER(jni_NewIntArray);
+    JNI_REGISTER(jni_NewLongArray);
+    JNI_REGISTER(jni_NewFloatArray);
+    JNI_REGISTER(jni_NewDoubleArray);
+    JNI_REGISTER(jni_GetBooleanArrayElements);
+    JNI_REGISTER(jni_GetByteArrayElements);
+    JNI_REGISTER(jni_GetCharArrayElements);
+    JNI_REGISTER(jni_GetShortArrayElements);
     JNI_REGISTER(jni_GetIntArrayElements);
+    JNI_REGISTER(jni_GetLongArrayElements);
+    JNI_REGISTER(jni_GetFloatArrayElements);
+    JNI_REGISTER(jni_GetDoubleArrayElements);
+    JNI_REGISTER(jni_ReleaseBooleanArrayElements);
+    JNI_REGISTER(jni_ReleaseByteArrayElements);
+    JNI_REGISTER(jni_ReleaseCharArrayElements);
+    JNI_REGISTER(jni_ReleaseShortArrayElements);
     JNI_REGISTER(jni_ReleaseIntArrayElements);
+    JNI_REGISTER(jni_ReleaseLongArrayElements);
+    JNI_REGISTER(jni_ReleaseFloatArrayElements);
+    JNI_REGISTER(jni_ReleaseDoubleArrayElements);
+    JNI_REGISTER(jni_SetBooleanArrayRegion);
+    JNI_REGISTER(jni_SetByteArrayRegion);
+    JNI_REGISTER(jni_SetCharArrayRegion);
+    JNI_REGISTER(jni_SetShortArrayRegion);
+    JNI_REGISTER(jni_SetIntArrayRegion);
+    JNI_REGISTER(jni_SetLongArrayRegion);
+    JNI_REGISTER(jni_SetFloatArrayRegion);
+    JNI_REGISTER(jni_SetDoubleArrayRegion);
 
     return true;
 
