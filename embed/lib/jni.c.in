@@ -273,6 +273,14 @@ static ht_t jni_buffers;
     }
 
 // TODO: sanitize buf
+#define DEFINE_GetArrayRegion(typename, jtype) \
+static void \
+jni_Get##typename##ArrayRegion(void*, jtype##Array array, jsize start, jsize len, jtype* buf) \
+{ \
+    (*jni_env)->Get##typename##ArrayRegion(jni_env, array, start, len, buf); \
+}
+
+// TODO: sanitize buf
 #define DEFINE_SetArrayRegion(typename, jtype) \
     static void \
     jni_Set##typename##ArrayRegion(void*, jtype##Array array, jsize start, jsize len, const jtype* buf) \
@@ -303,6 +311,14 @@ DEFINE_NewArray(Int, jint)
 DEFINE_NewArray(Long, jlong)
 DEFINE_NewArray(Float, jfloat)
 DEFINE_NewArray(Double, jdouble)
+DEFINE_GetArrayRegion(Boolean, jboolean)
+DEFINE_GetArrayRegion(Byte, jbyte)
+DEFINE_GetArrayRegion(Char, jchar)
+DEFINE_GetArrayRegion(Short, jshort)
+DEFINE_GetArrayRegion(Int, jint)
+DEFINE_GetArrayRegion(Long, jlong)
+DEFINE_GetArrayRegion(Float, jfloat)
+DEFINE_GetArrayRegion(Double, jdouble)
 DEFINE_SetArrayRegion(Boolean, jboolean)
 DEFINE_SetArrayRegion(Byte, jbyte)
 DEFINE_SetArrayRegion(Char, jchar)
@@ -319,6 +335,24 @@ DEFINE_ReleaseArrayElements(Int, jint)
 DEFINE_ReleaseArrayElements(Long, jlong)
 DEFINE_ReleaseArrayElements(Float, jfloat)
 DEFINE_ReleaseArrayElements(Double, jdouble)
+
+static jobjectArray
+jni_NewObjectArray(void*, jsize len, jclass clazz, jobject init)
+{
+    return (*jni_env)->NewObjectArray(jni_env, len, clazz, init);
+}
+
+static jobject
+jni_GetObjectArrayElement(void*, jobjectArray array, jsize index)
+{
+    return (*jni_env)->GetObjectArrayElement(jni_env, array, index);
+}
+
+static void
+jni_SetObjectArrayElement(void*, jobjectArray array, jsize index, jobject val)
+{
+    (*jni_env)->SetObjectArrayElement(jni_env, array, index, val);
+}
 
 // TODO: sanitize unicode
 static jstring
@@ -337,13 +371,28 @@ jni_GetStringLength(void*, jstring str)
 static const jchar*
 jni_GetStringChars(void*, jstring str, jboolean* isCopy)
 {
-    assert(!"GetStringChars: unimplemented");
+    jsize len = (*jni_env)->GetStringLength(jni_env, str);
+    jchar* sandbox_array = {{.lib}}_malloc(len * sizeof(jchar));
+    if (!sandbox_array)
+        return NULL;
+    const jchar* native_array = (*jni_env)->GetStringChars(jni_env, str, isCopy);
+    assert(native_array);
+    memcpy(sandbox_array, native_array, len * sizeof(jchar));
+    int ok = ht_put(&jni_buffers, sandbox_array, (void*) native_array);
+    assert(ok >= 0);
+    return (const jchar*) sandbox_array;
 }
 
 static void
-jni_ReleaseStringChars(void*, jstring str, const jchar* chars)
+jni_ReleaseStringChars(void*, jstring str, jchar* chars)
 {
-    assert(!"ReleaseStringChars: unimplemented");
+    bool found;
+    void* native_array = ht_get(&jni_buffers, chars, &found);
+    if (!found)
+        return;
+    jsize len = (*jni_env)->GetStringLength(jni_env, str);
+    {{.lib}}_free(chars);
+    (*jni_env)->ReleaseStringChars(jni_env, str, native_array);
 }
 
 // TODO: sanitize utf
@@ -360,16 +409,84 @@ jni_GetStringUTFLength(void*, jstring str)
 }
 
 // TODO: sanitize isCopy
-static const jchar*
+static char*
 jni_GetStringUTFChars(void*, jstring str, jboolean* isCopy)
 {
-    assert(!"GetStringUTFChars: unimplemented");
+    jsize len = (*jni_env)->GetStringUTFLength(jni_env, str);
+    char* sandbox_array = {{.lib}}_malloc(len * sizeof(char));
+    if (!sandbox_array)
+        return NULL;
+    const char* native_array = (*jni_env)->GetStringUTFChars(jni_env, str, isCopy);
+    assert(native_array);
+    memcpy(sandbox_array, native_array, len * sizeof(char));
+    int ok = ht_put(&jni_buffers, sandbox_array, (void*) native_array);
+    assert(ok >= 0);
+    return sandbox_array;
 }
 
 static void
-jni_ReleaseStringUTFChars(void*, jstring str, const jchar* chars)
+jni_ReleaseStringUTFChars(void*, jstring str, char* chars)
 {
-    assert(!"ReleaseStringUTFChars: unimplemented");
+    bool found;
+    void* native_array = ht_get(&jni_buffers, chars, &found);
+    if (!found)
+        return;
+    jsize len = (*jni_env)->GetStringUTFLength(jni_env, str);
+    {{.lib}}_free(chars);
+    (*jni_env)->ReleaseStringUTFChars(jni_env, str, native_array);
+}
+
+// TODO: sanitize buf
+static void
+jni_GetStringRegion(void*, jstring str, jsize start, jsize len, jchar* buf)
+{
+    (*jni_env)->GetStringRegion(jni_env, str, start, len, buf);
+}
+
+// TODO: sanitize buf
+static void
+jni_GetStringUTFRegion(void*, jstring str, jsize start, jsize len, char* buf)
+{
+    (*jni_env)->GetStringUTFRegion(jni_env, str, start, len, buf);
+}
+
+static void*
+jni_GetPrimitiveArrayCritical(void*, jarray array, jboolean* isCopy)
+{
+    assert(!"GetPrimitiveArrayCritical: unimplemented");
+}
+
+static void*
+jni_ReleasePrimitiveArrayCritical(void*, jarray array, void* carray, jint mode)
+{
+    assert(!"ReleasePrimitiveArrayCritical: unimplemented");
+}
+
+static jchar*
+jni_GetStringCritical(void*, jstring string, jboolean* isCopy)
+{
+    jsize len = (*jni_env)->GetStringLength(jni_env, string);
+    jchar* sandbox_array = {{.lib}}_malloc(len * sizeof(jchar));
+    if (!sandbox_array)
+        return NULL;
+    const jchar* native_array = (*jni_env)->GetStringCritical(jni_env, string, isCopy);
+    assert(native_array);
+    memcpy(sandbox_array, native_array, len * sizeof(jchar));
+    int ok = ht_put(&jni_buffers, sandbox_array, (void*) native_array);
+    assert(ok >= 0);
+    return sandbox_array;
+}
+
+static void
+jni_ReleaseStringCritical(void*, jstring string, jchar* cstring)
+{
+    bool found;
+    void* native_array = ht_get(&jni_buffers, cstring, &found);
+    if (!found)
+        return;
+    jsize len = (*jni_env)->GetStringLength(jni_env, string);
+    {{.lib}}_free(cstring);
+    (*jni_env)->ReleaseStringCritical(jni_env, string, native_array);
 }
 
 static jmethodID
@@ -650,6 +767,14 @@ lfi_jni_init(void)
     JNI_REGISTER(jni_ReleaseLongArrayElements);
     JNI_REGISTER(jni_ReleaseFloatArrayElements);
     JNI_REGISTER(jni_ReleaseDoubleArrayElements);
+    JNI_REGISTER(jni_GetBooleanArrayRegion);
+    JNI_REGISTER(jni_GetByteArrayRegion);
+    JNI_REGISTER(jni_GetCharArrayRegion);
+    JNI_REGISTER(jni_GetShortArrayRegion);
+    JNI_REGISTER(jni_GetIntArrayRegion);
+    JNI_REGISTER(jni_GetLongArrayRegion);
+    JNI_REGISTER(jni_GetFloatArrayRegion);
+    JNI_REGISTER(jni_GetDoubleArrayRegion);
     JNI_REGISTER(jni_SetBooleanArrayRegion);
     JNI_REGISTER(jni_SetByteArrayRegion);
     JNI_REGISTER(jni_SetCharArrayRegion);
@@ -764,10 +889,23 @@ lfi_jni_init(void)
     JNI_REGISTER(jni_CallStaticVoidMethodA);
     JNI_REGISTER(jni_GetMethodID);
     JNI_REGISTER(jni_GetStaticMethodID);
+    JNI_REGISTER(jni_NewObjectArray);
+    JNI_REGISTER(jni_GetObjectArrayElement);
+    JNI_REGISTER(jni_SetObjectArrayElement);
     JNI_REGISTER(jni_NewString);
     JNI_REGISTER(jni_GetStringLength);
     JNI_REGISTER(jni_NewStringUTF);
     JNI_REGISTER(jni_GetStringUTFLength);
+    JNI_REGISTER(jni_GetStringChars);
+    JNI_REGISTER(jni_ReleaseStringChars);
+    JNI_REGISTER(jni_GetStringUTFChars);
+    JNI_REGISTER(jni_ReleaseStringUTFChars);
+    JNI_REGISTER(jni_GetStringRegion);
+    JNI_REGISTER(jni_GetStringUTFRegion);
+    /* JNI_REGISTER(jni_GetPrimitiveArrayCritical); //TODO */
+    /* JNI_REGISTER(jni_ReleasePrimitiveArrayCritical); //TODO */
+    JNI_REGISTER(jni_GetStringCritical);
+    JNI_REGISTER(jni_ReleaseStringCritical);
     JNI_REGISTER_INTERNAL(jni_CallObjectMethod);
     JNI_REGISTER_INTERNAL(jni_CallBooleanMethod);
     JNI_REGISTER_INTERNAL(jni_CallByteMethod);
