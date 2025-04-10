@@ -37,7 +37,7 @@ lfi_ctx:
     // context pointer is now in %rax
     ret
 
-__lfi_trampoline_slowpath:
+.lfi_trampoline_slowpath:
 	# slow path
 	pushq %rdi
 	pushq %rsi
@@ -77,6 +77,7 @@ __lfi_trampoline_slowpath:
 
 .global __lfi_trampoline_stack
 __lfi_trampoline_stack:
+.lfi_trampoline_stack:
     pushq %r15
     pushq %r14
     pushq %r13
@@ -87,7 +88,7 @@ __lfi_trampoline_stack:
 
     cmpq $0, %r11
     jne 1f
-    call __lfi_trampoline_slowpath
+    call .lfi_trampoline_slowpath
 1:
 
     pushq %rbp     // dummy push to keep stack properly aligned
@@ -113,6 +114,7 @@ __lfi_trampoline_stack:
 
 .global __lfi_trampoline
 __lfi_trampoline:
+.lfi_trampoline:
 	pushq %r15
 	pushq %r14
 	pushq %r13
@@ -123,7 +125,7 @@ __lfi_trampoline:
 
 	cmpq $0, %r11
 	jne 1f
-	call __lfi_trampoline_slowpath
+	call .lfi_trampoline_slowpath
 1:
 
     pushq %rbp     // dummy push to keep stack properly aligned
@@ -160,9 +162,9 @@ __lfi_trampolines:
 	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
 	movq (%r10), %r10
     {{if (has_stack_args $sym)}}
-	jmp __lfi_trampoline_stack
+	jmp .lfi_trampoline_stack
     {{else}}
-    jmp __lfi_trampoline
+    jmp .lfi_trampoline
     {{end}}
 {{- end}}
 
@@ -173,9 +175,9 @@ __lfi_trampolines:
 	movq __lfisym_{{$sym}}@GOTPCREL(%rip), %r10
 	movq (%r10), %r10
     {{if (has_stack_args $sym)}}
-    jmp __lfi_trampoline_stack
+    jmp .lfi_trampoline_stack
     {{else}}
-    jmp __lfi_trampoline
+    jmp .lfi_trampoline
     {{end}}
 {{- end}}
 
